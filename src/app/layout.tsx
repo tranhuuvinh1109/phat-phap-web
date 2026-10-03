@@ -6,14 +6,19 @@ import "@/styles/globals.css";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Next.js TypeScript Template",
-  description: "A professional Next.js template with TypeScript",
+  title: "Phat Phap Web",
+  description: "Phat Phap Web application",
 };
 
 type TProps = Readonly<IChildren>;
 const RootLayout: FC<TProps> = ({ children }) => (
-  <html lang="en">
-    <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</body>
+  <html lang="en" suppressHydrationWarning>
+    <body
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      suppressHydrationWarning
+    >
+      {children}
+    </body>
   </html>
 );
 
