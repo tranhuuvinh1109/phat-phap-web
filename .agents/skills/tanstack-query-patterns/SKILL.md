@@ -1,122 +1,208 @@
 ---
 name: tanstack-query-patterns
 description: >-
-  Use this skill when fetching, caching, or mutating server data, setting up TanStack Query v5 hooks, QueryClientProvider, query key factories, or optimistic updates.
+  Use this skill when fetching, caching, or mutating server data, creating API functions and TanStack Query v5 hooks, configuring query key enums, or defining typed mutation and query custom hooks.
 ---
 
-# TanStack Query v5 Patterns
+# TanStack Query v5 & API Architecture Patterns
 
-Follow these conventions when implementing server state, data fetching, caching, and mutations:
+All API requests and TanStack Query hooks in this project follow a feature-based structure under `src/api/<feature>/`.
 
-## 1. Provider Setup (App Router)
+## 1. Directory & File Organization
 
-Create a dedicated client wrapper in `src/components/providers/query-provider.tsx`:
+For any domain or feature (e.g., `auth`, `user`, `post`):
 
-```tsx
-"use client";
-
-import { QueryClient, QueryClientProvider, isServer } from "@tanstack/react-query";
-import { ReactNode, useState } from "react";
-
-function makeQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 60 * 1000, // 1 minute
-        gcTime: 5 * 60 * 1000, // 5 minutes
-        refetchOnWindowFocus: false,
-        retry: 1,
-      },
-    },
-  });
-}
-
-let browserQueryClient: QueryClient | undefined = undefined;
-
-function getQueryClient() {
-  if (isServer) return makeQueryClient();
-  if (!browserQueryClient) browserQueryClient = makeQueryClient();
-  return browserQueryClient;
-}
-
-export function QueryProvider({ children }: { children: ReactNode }) {
-  const queryClient = getQueryClient();
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
-}
+```text
+src/
+├── api/
+│   └── <feature>/
+│       ├── <feature>.api.ts    # API call functions using apiClient & API_URL
+│       ├── <feature>.type.ts   # Request payload and response data interfaces (PascalCase)
+│       └── <feature>.hook.ts   # TanStack Query custom hooks (useMutation, useQuery)
+├── constants/
+│   ├── apiURL.ts              # API endpoint path constants (API_URL)
+│   └── index.ts
+└── enums/
+    ├── query-keys.enum.ts     # QueryKeyEnum: define direct query keys
+    └── index.ts
 ```
 
-## 2. Query Key Factory Pattern
+---
 
-Always define structured query keys in `src/hooks/queries/keys.ts` to avoid typo bugs and ease cache invalidation:
+## 2. Type Naming Convention (PascalCase)
+
+Always use **PascalCase** for all types and interfaces in `<feature>.type.ts`:
+
+- Request payloads: `SignUpPayloadType`, `SignInPayloadType`, `CreatePostPayloadType`
+- Response data: `SignUpResponseType`, `SignInResponseType`, `UserProfileResponseType`, `UserDetailResponseType`
+
+---
+
+## 3. API Function Pattern (`<feature>.api.ts`)
+
+Always use `apiClient` from `@/lib/axios`, reference `API_URL` from `@/constants`, and return `response.data`:
 
 ```typescript
-export const queryKeys = {
-  transcript: {
-    all: ["transcript"] as const,
-    byUrl: (url: string, lang?: string) => ["transcript", "byUrl", url, lang] as const,
-    detail: (videoId: string) => ["transcript", "detail", videoId] as const,
-  },
-  aiSummary: {
-    all: ["aiSummary"] as const,
-    byVideoId: (videoId: string) => ["aiSummary", videoId] as const,
-  },
+import { API_URL } from "@/constants";
+import { apiClient } from "@/lib/axios";
+import {
+  SignInPayloadType,
+  SignInResponseType,
+  SignUpPayloadType,
+  SignUpResponseType,
+  UserProfileResponseType,
+} from "./auth.type";
+
+export const signUp = async (payload: SignUpPayloadType): Promise<SignUpResponseType> => {
+  const response = await apiClient.post<SignUpResponseType>(API_URL.signUp, payload);
+  return response.data;
+};
+
+export const signIn = async (payload: SignInPayloadType): Promise<SignInResponseType> => {
+  const response = await apiClient.post<SignInResponseType>(API_URL.signIn, payload);
+  return response.data;
+};
+
+export const getProfile = async (): Promise<UserProfileResponseType> => {
+  const response = await apiClient.get<UserProfileResponseType>(API_URL.profile);
+  return response.data;
 };
 ```
 
-## 3. Query Hook Convention
+---
 
-Store query hooks in `src/hooks/queries/use-[name]-query.ts`:
+## 4. Custom Hook Pattern with Props & Type Safety (`<feature>.hook.ts`)
 
-```typescript
-import { useQuery } from "@tanstack/react-query";
-import { queryKeys } from "./keys";
+Every custom hook MUST:
+1. Accept TanStack Query options (`onSuccess`, `onError`, `retry`, `enabled`, etc.) as optional props using `Omit<Use...Options, 'mutationFn'>` or `Omit<Use...Options, 'queryKey' | 'queryFn'>`.
+2. Return strongly-typed `UseMutationResult` or `UseQueryResult`.
+3. Use `QueryKeyEnum` directly in `queryKey: [QueryKeyEnum.NAME, ...params]`.
 
-export function useTranscriptQuery(url: string | null, lang?: string) {
-  return useQuery({
-    queryKey: queryKeys.transcript.byUrl(url ?? "", lang),
-    queryFn: async () => {
-      if (!url) throw new Error("URL is required");
-      const langParam = lang ? `&lang=${encodeURIComponent(lang)}` : "";
-      const res = await fetch(`/api/transcript?url=${encodeURIComponent(url)}${langParam}`);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to fetch transcript");
-      }
-      return res.json();
-    },
-    enabled: Boolean(url),
-  });
-}
-```
-
-## 4. Mutation & Invalidation Pattern
-
-Store mutations in `src/hooks/mutations/use-[name]-mutation.ts`:
+### A. Mutation Hook (`useMutation`)
 
 ```typescript
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "../queries/keys";
+import {
+  useMutation,
+  type UseMutationOptions,
+  type UseMutationResult,
+} from "@tanstack/react-query";
+import { AxiosError } from "axios";
 
-export function useGenerateSummaryMutation() {
-  const queryClient = useQueryClient();
+import { signUp } from "./auth.api";
+import { SignUpPayloadType, SignUpResponseType } from "./auth.type";
 
+/**
+ * Options type: allows callers to pass onSuccess, onError, onSettled, retry, etc.
+ */
+export type UseSignUpOptions = Omit<
+  UseMutationOptions<SignUpResponseType, AxiosError, SignUpPayloadType>,
+  "mutationFn"
+>;
+
+export const useSignUp = (
+  options?: UseSignUpOptions
+): UseMutationResult<SignUpResponseType, AxiosError, SignUpPayloadType> => {
   return useMutation({
-    mutationFn: async (payload: { videoId: string; prompt?: string }) => {
-      const res = await fetch("/api/summary", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error("Failed to generate summary");
-      return res.json();
-    },
-    onSuccess: (data, variables) => {
-      queryClient.setQueryData(queryKeys.aiSummary.byVideoId(variables.videoId), data);
-    },
+    mutationFn: signUp,
+    ...options,
   });
+};
+```
+
+**Caller Usage Example**:
+```typescript
+const { mutate, isPending } = useSignUp({
+  onSuccess: (data) => {
+    console.log("Registered user:", data.user);
+  },
+  onError: (error) => {
+    alert(error.message);
+  },
+});
+
+// Trigger:
+mutate({ email: "user@example.com", password: "secretPassword" });
+```
+
+---
+
+### B. Query Hook (`useQuery`)
+
+Query keys are referenced directly from `QueryKeyEnum` in `src/enums/`:
+
+```typescript
+import {
+  useQuery,
+  type UseQueryOptions,
+  type UseQueryResult,
+} from "@tanstack/react-query";
+import { AxiosError } from "axios";
+
+import { QueryKeyEnum } from "@/enums";
+import { getProfile, getUserDetail } from "./auth.api";
+import { UserDetailResponseType, UserProfileResponseType } from "./auth.type";
+
+/**
+ * Options type: allows callers to pass select, enabled, staleTime, retry, etc.
+ */
+export type UseUserProfileOptions = Omit<
+  UseQueryOptions<UserProfileResponseType, AxiosError, UserProfileResponseType>,
+  "queryKey" | "queryFn"
+>;
+
+export const useUserProfile = (
+  options?: UseUserProfileOptions
+): UseQueryResult<UserProfileResponseType, AxiosError> => {
+  return useQuery({
+    queryKey: [QueryKeyEnum.GET_USER_PROFILE],
+    queryFn: getProfile,
+    ...options,
+  });
+};
+```
+
+**Query Hook with Dynamic Arguments**:
+```typescript
+export type UseUserDetailOptions = Omit<
+  UseQueryOptions<UserDetailResponseType, AxiosError, UserDetailResponseType>,
+  "queryKey" | "queryFn"
+>;
+
+export const useUserDetail = (
+  userId: string,
+  options?: UseUserDetailOptions
+): UseQueryResult<UserDetailResponseType, AxiosError> => {
+  return useQuery({
+    queryKey: [QueryKeyEnum.GET_USER_PROFILE, userId],
+    queryFn: () => getUserDetail(userId),
+    enabled: Boolean(userId),
+    ...options,
+  });
+};
+```
+
+---
+
+## 5. QueryKeyEnum Convention (`src/enums/query-keys.enum.ts`)
+
+Define all query keys directly as uppercase enums:
+
+```typescript
+export enum QueryKeyEnum {
+  AUTH = "AUTH",
+  USER = "USER",
+  GET_USER_PROFILE = "GET_USER_PROFILE",
+  GET_POST_DETAIL = "GET_POST_DETAIL",
+  GET_POSTS_LIST = "GET_POSTS_LIST",
 }
 ```
 
-## Rules for Token & Perf Optimization
-- **Never sync TanStack Query state into a Zustand store or local useState** via `useEffect`. Derive state directly or use `select`.
-- Use `select` option in `useQuery` for data transformation to prevent unnecessary component re-renders.
+---
+
+## 6. Golden Rules for Vibe Coding & Performance
+
+1. **Always return `response.data`** from API functions so hook callers receive pure response payload without unwrapping `AxiosResponse`.
+2. **PascalCase for Types**: Always name interfaces and types with PascalCase (e.g., `UserDetailResponseType`, `SignUpPayloadType`).
+3. **Never duplicate server cache into Zustand**: Always consume TanStack Query hooks directly in UI components. Use `select` in `useQuery` for computed / transformed data.
+4. **Props Forwarding**: Always expose `options?: Use...Options` so components can attach local callbacks (`onSuccess`, `onError`) or control lifecycle (`enabled`).
+5. **Direct Enums in Query Keys**: Use `[QueryKeyEnum.SOME_KEY, ...params]` directly, keeping cache keys consistent across the entire application.

@@ -9,8 +9,8 @@ Stack: **Next.js (App Router, Turbopack) + React 19 + TypeScript + Tailwind CSS 
 
 Never mix server state and client state:
 - **Server Cache & Async Data** ➔ **TanStack Query (`@tanstack/react-query`)**:
-  - Always use query key factories: `export const transcriptKeys = { all: ['transcript'] as const, detail: (id: string) => [...transcriptKeys.all, id] as const }`.
-  - Encapsulate queries and mutations inside custom hooks in `src/hooks/queries/` or `src/hooks/mutations/`.
+  - Direct Enums for Query Keys: Always use `QueryKeyEnum` from `@/enums` directly in query hooks: `[QueryKeyEnum.GET_USER_PROFILE, ...params]`.
+  - Feature-based API Architecture: Organize by feature in `src/api/<feature>/` (`<feature>.api.ts`, `<feature>.type.ts`, `<feature>.hook.ts`).
   - **NEVER** duplicate TanStack Query data into Zustand stores.
 - **Global Client UI State** ➔ **Zustand (`zustand`)**:
   - Only for UI state: modal open/close, active theme, video playback progress/sync, current active segment, user preferences.

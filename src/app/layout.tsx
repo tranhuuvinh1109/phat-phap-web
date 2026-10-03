@@ -1,5 +1,6 @@
-import { FC } from "react";
+import { type FC } from "react";
 
+import { AuthProvider, QueryProvider } from "@/components/providers";
 import { geistMono, geistSans } from "@/config";
 
 import "@/styles/globals.css";
@@ -17,7 +18,9 @@ const RootLayout: FC<TProps> = ({ children }) => (
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       suppressHydrationWarning
     >
-      {children}
+      <QueryProvider>
+        <AuthProvider>{children}</AuthProvider>
+      </QueryProvider>
     </body>
   </html>
 );
