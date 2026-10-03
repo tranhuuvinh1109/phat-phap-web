@@ -1,18 +1,33 @@
 "use client";
 
-import { Image as ImageIcon, Trash2, UploadCloud } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Image as ImageIcon,
+  Loader2,
+  Trash2,
+  UploadCloud,
+} from "lucide-react";
 import Image from "next/image";
 import React, { useRef, useState } from "react";
 
 interface ThumbnailUploadProps {
   thumbnail: File | null;
   thumbnailPreview?: string | null;
+  thumbnailUrl?: string | null;
+  thumbnailKey?: string | null;
+  isUploading?: boolean;
+  uploadProgress?: number;
   onChange: (file: File | null, previewUrl: string | null) => void;
 }
 
 export const ThumbnailUpload: React.FC<ThumbnailUploadProps> = ({
   thumbnail,
   thumbnailPreview,
+  thumbnailUrl,
+  thumbnailKey,
+  isUploading = false,
+  uploadProgress = 0,
   onChange,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -22,7 +37,9 @@ export const ThumbnailUpload: React.FC<ThumbnailUploadProps> = ({
   const handleFileProcess = (file: File) => {
     setError(null);
     if (!file.type.startsWith("image/")) {
-      setError("Vui lòng chọn định dạng hình ảnh hợp lệ (.jpg, .jpeg, .png, .webp).");
+      setError(
+        "Vui lòng chọn định dạng hình ảnh hợp lệ (.jpg, .jpeg, .png, .webp)."
+      );
       return;
     }
 
@@ -32,6 +49,7 @@ export const ThumbnailUpload: React.FC<ThumbnailUploadProps> = ({
     }
 
     const previewUrl = URL.createObjectURL(file);
+    // Stage file locally in form state, do not upload yet until submit
     onChange(file, previewUrl);
   };
 
@@ -65,38 +83,62 @@ export const ThumbnailUpload: React.FC<ThumbnailUploadProps> = ({
       URL.revokeObjectURL(thumbnailPreview);
     }
     onChange(null, null);
+    setError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
+  const displayImage = thumbnailPreview || thumbnailUrl;
+
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-semibold text-neutral-800">
-        Ảnh đại diện (Thumbnail){" "}
-        <span className="text-xs font-normal text-neutral-400">(tùy chọn)</span>
-      </label>
+      <div className="flex items-center justify-between">
+        <label className="block text-sm font-semibold text-neutral-800">
+          Ảnh đại diện (Thumbnail){" "}
+          <span className="text-xs font-normal text-neutral-400">
+            (tùy chọn)
+          </span>
+        </label>
+        {isUploading && (
+          <span className="flex items-center gap-1.5 text-xs text-amber-700 font-medium">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <span>Đang tải lên S3 ({uploadProgress}%)...</span>
+          </span>
+        )}
+      </div>
 
-      {thumbnailPreview ? (
-        <div className="relative group w-full max-w-md h-48 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100">
+      {displayImage ? (
+        <div className="relative group w-full max-w-md h-48 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100 shadow-2xs">
           <Image
-            src={thumbnailPreview}
+            src={displayImage}
             alt="Thumbnail preview"
             fill
             className="object-cover"
           />
+
+          {/* S3 uploaded badge */}
+          {thumbnailUrl && !isUploading && (
+            <div className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-xs px-2.5 py-1 text-[11px] font-semibold text-white">
+              <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+              <span>Đã lưu trên S3</span>
+            </div>
+          )}
+
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="rounded-xl bg-white/90 px-3 py-1.5 text-xs font-semibold text-neutral-800 shadow-sm hover:bg-white"
+              disabled={isUploading}
+              className="rounded-xl bg-white/90 px-3 py-1.5 text-xs font-semibold text-neutral-800 shadow-sm hover:bg-white disabled:opacity-50"
             >
               Đổi ảnh
             </button>
             <button
               type="button"
               onClick={handleRemove}
-              className="rounded-xl bg-red-600/90 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-red-600 flex items-center gap-1"
+              disabled={isUploading}
+              className="rounded-xl bg-red-600/90 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-red-600 flex items-center gap-1 disabled:opacity-50"
             >
               <Trash2 className="h-3.5 w-3.5" />
               <span>Xóa</span>
@@ -119,10 +161,11 @@ export const ThumbnailUpload: React.FC<ThumbnailUploadProps> = ({
             <UploadCloud className="h-6 w-6" />
           </div>
           <p className="mt-3 text-sm font-medium text-neutral-800">
-            Kéo thả ảnh vào đây, hoặc <span className="text-amber-700 underline">chọn tệp từ máy</span>
+            Kéo thả ảnh vào đây, hoặc{" "}
+            <span className="text-amber-700 underline">chọn tệp từ máy</span>
           </p>
           <p className="mt-1 text-xs text-neutral-400">
-            Hỗ trợ PNG, JPG, WebP (Tối đa 5 MB)
+            Hỗ trợ PNG, JPG, WebP (Tối đa 5 MB • Tải lên S3 khi tạo bài viết)
           </p>
         </div>
       )}
@@ -136,7 +179,10 @@ export const ThumbnailUpload: React.FC<ThumbnailUploadProps> = ({
       />
 
       {error && (
-        <p className="text-xs font-medium text-red-600">{error}</p>
+        <p className="flex items-center gap-1 text-xs font-medium text-red-600">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+          <span>{error}</span>
+        </p>
       )}
     </div>
   );

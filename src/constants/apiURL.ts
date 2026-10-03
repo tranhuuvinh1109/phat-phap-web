@@ -4,4 +4,5 @@ export const API_URL = {
   refreshToken: "/auth/refresh",
   me: "/auth/me",
   categories: "/categories",
+  presignedUploadUrl: "/files/presigned-upload-url",
 };

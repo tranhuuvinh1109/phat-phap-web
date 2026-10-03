@@ -8,7 +8,11 @@ export interface CreatePostFormValues {
   description: string;
   thumbnail: File | null;
   thumbnailPreview?: string | null;
+  thumbnailUrl?: string | null;
+  thumbnailKey?: string | null;
   audioFile: File | null;
+  audioUrl?: string | null;
+  audioKey?: string | null;
   content: string;
 }
 

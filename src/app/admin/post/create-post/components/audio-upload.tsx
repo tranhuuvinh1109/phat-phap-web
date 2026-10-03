@@ -1,17 +1,32 @@
 "use client";
 
-import { AlertCircle, FileAudio, Music, Trash2, UploadCloud } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  FileAudio,
+  Loader2,
+  Music,
+  Trash2,
+} from "lucide-react";
 import React, { useRef, useState } from "react";
 
 interface AudioUploadProps {
   audioFile: File | null;
   error?: string | null;
+  isUploading?: boolean;
+  uploadProgress?: number;
+  isUploadSuccess?: boolean;
+  audioKey?: string | null;
   onChange: (file: File | null) => void;
 }
 
 export const AudioUpload: React.FC<AudioUploadProps> = ({
   audioFile,
   error: externalError,
+  isUploading = false,
+  uploadProgress = 0,
+  isUploadSuccess = false,
+  audioKey,
   onChange,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -21,7 +36,7 @@ export const AudioUpload: React.FC<AudioUploadProps> = ({
 
   const MAX_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
 
-  const validateAndSetFile = (file: File) => {
+  const validateAndSelectFile = (file: File) => {
     setInternalError(null);
 
     // 1. Validate file extension and MIME type (Only .mp3)
@@ -31,29 +46,35 @@ export const AudioUpload: React.FC<AudioUploadProps> = ({
       file.name.toLowerCase().endsWith(".mp3");
 
     if (!isMp3) {
-      setInternalError("Chỉ chấp nhận tệp âm thanh định dạng .mp3 (Only MP3 files are allowed).");
+      setInternalError(
+        "Chỉ chấp nhận tệp âm thanh định dạng .mp3 (Only MP3 files are allowed)."
+      );
       return;
     }
 
     // 2. Validate max file size <= 20 MB
     if (file.size > MAX_SIZE_BYTES) {
-      setInternalError("Dung lượng tệp phải nhỏ hơn 20 MB (File size must be smaller than 20 MB).");
+      setInternalError(
+        "Dung lượng tệp phải nhỏ hơn 20 MB (File size must be smaller than 20 MB)."
+      );
       return;
     }
 
-    // Generate preview URL
+    // Generate local preview URL
     if (audioPreviewUrl) {
       URL.revokeObjectURL(audioPreviewUrl);
     }
     const url = URL.createObjectURL(file);
     setAudioPreviewUrl(url);
+
+    // Save to form state (Do NOT upload automatically, wait for submit)
     onChange(file);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      validateAndSetFile(files[0]);
+      validateAndSelectFile(files[0]);
     }
   };
 
@@ -71,7 +92,7 @@ export const AudioUpload: React.FC<AudioUploadProps> = ({
     setIsDragging(false);
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
-      validateAndSetFile(files[0]);
+      validateAndSelectFile(files[0]);
     }
   };
 
@@ -100,12 +121,12 @@ export const AudioUpload: React.FC<AudioUploadProps> = ({
           Tệp âm thanh (Audio MP3) <span className="text-amber-700">*</span>
         </label>
         <span className="text-xs font-medium text-neutral-400">
-          Định dạng: .mp3 • Tối đa: 20 MB • Số lượng: 1 tệp
+          Định dạng: .mp3 • Tối đa: 20 MB • Tải lên S3 khi bấm Tạo bài viết
         </span>
       </div>
 
       {audioFile ? (
-        <div className="rounded-2xl border border-amber-200/80 bg-amber-50/40 p-4 transition-all">
+        <div className="rounded-2xl border border-amber-200/80 bg-amber-50/40 p-4 transition-all space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className="rounded-xl bg-amber-600/10 p-2.5 text-amber-700 shrink-0">
@@ -124,16 +145,55 @@ export const AudioUpload: React.FC<AudioUploadProps> = ({
             <button
               type="button"
               onClick={handleRemove}
-              className="rounded-xl p-2 text-neutral-400 hover:bg-red-50 hover:text-red-600 transition-colors shrink-0"
+              disabled={isUploading}
+              className="rounded-xl p-2 text-neutral-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-50 shrink-0"
               title="Xóa tệp âm thanh"
             >
               <Trash2 className="h-4 w-4" />
             </button>
           </div>
 
+          {/* S3 Upload Progress Bar (displayed during form submission) */}
+          {isUploading && (
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between text-xs text-amber-900">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-600" />
+                  <span>Đang tải lên AWS S3...</span>
+                </span>
+                <span className="font-semibold font-mono">{uploadProgress}%</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-amber-200/60">
+                <div
+                  className="h-full bg-gradient-to-r from-amber-500 to-amber-600 transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Upload Status / Success Badge */}
+          {isUploadSuccess ? (
+            <div className="flex items-center justify-between rounded-xl bg-emerald-50 border border-emerald-200/80 px-3 py-2 text-xs text-emerald-800">
+              <span className="flex items-center gap-1.5 font-semibold">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span>Đã lưu trữ an toàn trên AWS S3</span>
+              </span>
+              {audioKey && (
+                <span className="max-w-[180px] truncate text-[11px] text-emerald-700/80 font-mono">
+                  {audioKey}
+                </span>
+              )}
+            </div>
+          ) : !isUploading && (
+            <p className="text-xs text-neutral-400 italic">
+              * Tệp sẽ được tự động tải lên AWS S3 khi bạn bấm nút &quot;Tạo bài viết&quot;.
+            </p>
+          )}
+
           {/* HTML5 Audio Player Preview */}
           {audioPreviewUrl && (
-            <div className="mt-3 pt-3 border-t border-amber-200/60">
+            <div className="pt-2 border-t border-amber-200/60">
               <audio
                 controls
                 src={audioPreviewUrl}
@@ -179,7 +239,7 @@ export const AudioUpload: React.FC<AudioUploadProps> = ({
         className="hidden"
       />
 
-      {activeError && (
+      {activeError && !audioFile && (
         <p className="flex items-center gap-1.5 text-xs font-medium text-red-600">
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           <span>{activeError}</span>
