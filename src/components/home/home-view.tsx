@@ -7,14 +7,12 @@ import {
   HeroBanner,
   LatestContent,
   QuickPractice,
-  SidePlaylistPanel,
 } from "@/components/home";
 import { Header, Sidebar } from "@/components/layout";
+import { CategorizedPosts } from "@/components/post";
 import {
-  BACH_THOAI_ITEMS,
   CONTINUE_LISTENING_DATA,
   HERO_BANNER_DATA,
-  KHAI_THI_ITEMS,
   LATEST_CONTENT_ITEMS,
   QUICK_PRACTICE_ITEMS,
 } from "@/constants/home.constants";
@@ -70,13 +68,9 @@ export function HomeView() {
               <LatestContent items={LATEST_CONTENT_ITEMS} />
             </div>
 
-            {/* Right Column Panels (Bạch thoại Phật pháp & Khai thị nổi bật) */}
+            {/* Right Column Panels (Bạch thoại Phật pháp & Các danh mục khác) */}
             <aside className="w-full shrink-0 space-y-6 xl:w-76 2xl:w-88">
-              {/* Bạch thoại Phật pháp Playlist */}
-              <SidePlaylistPanel title="Bạch thoại Phật pháp" items={BACH_THOAI_ITEMS} />
-
-              {/* Khai thị nổi bật Playlist */}
-              <SidePlaylistPanel title="Khai thị nổi bật" items={KHAI_THI_ITEMS} />
+              <CategorizedPosts />
             </aside>
           </div>
         </main>

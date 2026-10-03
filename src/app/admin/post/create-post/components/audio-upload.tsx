@@ -10,24 +10,30 @@ import {
 } from "lucide-react";
 import React, { useRef, useState } from "react";
 
+import { formatTime, getAudioDuration } from "@/lib/utils";
+
 interface AudioUploadProps {
   audioFile: File | null;
+  duration?: number | null;
   error?: string | null;
   isUploading?: boolean;
   uploadProgress?: number;
   isUploadSuccess?: boolean;
   audioKey?: string | null;
   onChange: (file: File | null) => void;
+  onDurationChange?: (duration: number | null) => void;
 }
 
 export const AudioUpload: React.FC<AudioUploadProps> = ({
   audioFile,
+  duration,
   error: externalError,
   isUploading = false,
   uploadProgress = 0,
   isUploadSuccess = false,
   audioKey,
   onChange,
+  onDurationChange,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [internalError, setInternalError] = useState<string | null>(null);
@@ -69,6 +75,11 @@ export const AudioUpload: React.FC<AudioUploadProps> = ({
 
     // Save to form state (Do NOT upload automatically, wait for submit)
     onChange(file);
+
+    // Extract audio duration
+    getAudioDuration(file).then((dur) => {
+      onDurationChange?.(dur);
+    });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,6 +113,7 @@ export const AudioUpload: React.FC<AudioUploadProps> = ({
       setAudioPreviewUrl(null);
     }
     onChange(null);
+    onDurationChange?.(null);
     setInternalError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -137,6 +149,7 @@ export const AudioUpload: React.FC<AudioUploadProps> = ({
                   {audioFile.name}
                 </p>
                 <p className="text-xs text-neutral-500">
+                  {duration && duration > 0 ? `Thời lượng: ${formatTime(duration)} • ` : ""}
                   {formatFileSize(audioFile.size)} • audio/mpeg
                 </p>
               </div>

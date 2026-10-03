@@ -3,5 +3,6 @@ import { twMerge } from "tailwind-merge";
 
 export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
 
+export * from "./audio";
 export * from "./format-time";
 export * from "./slugify";

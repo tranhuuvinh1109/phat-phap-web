@@ -13,6 +13,7 @@ export interface CreatePostFormValues {
   audioFile: File | null;
   audioUrl?: string | null;
   audioKey?: string | null;
+  audioDuration?: number | null;
   content: string;
 }
 

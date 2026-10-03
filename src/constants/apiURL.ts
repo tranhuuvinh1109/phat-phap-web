@@ -5,4 +5,5 @@ export const API_URL = {
   me: "/auth/me",
   categories: "/categories",
   presignedUploadUrl: "/files/presigned-upload-url",
+  posts: "/posts",
 };

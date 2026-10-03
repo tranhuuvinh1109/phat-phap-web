@@ -13,8 +13,12 @@ import React, { useState } from "react";
 
 import { CategoryItemType } from "@/api/category";
 import { uploadFile } from "@/api/file";
+import { useCreatePost } from "@/api/post";
+import { CreatePostPayloadType, PostItemType } from "@/api/post/post.type";
 import { Button } from "@/components/ui";
 import { ContentType } from "@/enums";
+import { getAudioDuration } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 import { CreatePostFormValues } from "../../types/post-form.type";
 import { AudioUpload } from "./audio-upload";
 import { PostBasicFields } from "./post-basic-fields";
@@ -34,6 +38,7 @@ export const StepPostDetails: React.FC<StepPostDetailsProps> = ({
   onChangeFormValues,
   onBack,
 }) => {
+  const router = useRouter();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAudioUploading, setIsAudioUploading] = useState(false);
@@ -42,6 +47,25 @@ export const StepPostDetails: React.FC<StepPostDetailsProps> = ({
   const [thumbProgress, setThumbProgress] = useState(0);
   const [validationSuccess, setValidationSuccess] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [createdPost, setCreatedPost] = useState<PostItemType | null>(null);
+
+  // TanStack Query Create Post Mutation
+  const createPostMutation = useCreatePost({
+    onSuccess: (post) => {
+      setCreatedPost(post);
+      setValidationSuccess(
+        `Bài viết "${post.title}" đã được tạo thành công trên hệ thống!`
+      );
+    },
+    onError: (err) => {
+      const errorMsg =
+        (err as { response?: { data?: { message?: string | string[] } } })
+          ?.response?.data?.message ||
+        err.message ||
+        "Đã có lỗi xảy ra khi tạo bài viết.";
+      setSubmitError(Array.isArray(errorMsg) ? errorMsg.join(", ") : errorMsg);
+    },
+  });
 
   // Field validation
   const errors: {
@@ -132,14 +156,39 @@ export const StepPostDetails: React.FC<StepPostDetailsProps> = ({
         thumbnailKey: uploadedThumbKey,
       });
 
-      // Display validation and upload success
-      setValidationSuccess(
-        `Đã tải lên tệp lên AWS S3 thành công! ${
-          uploadedAudioKey ? `(Audio S3 Key: ${uploadedAudioKey})` : ""
-        } ${
-          uploadedThumbKey ? `(Thumbnail S3 Key: ${uploadedThumbKey})` : ""
-        }. Dữ liệu đã sẵn sàng để lưu bài viết.`
-      );
+      // Extract duration if audio post
+      let audioDuration = formValues.audioDuration;
+      if (
+        formValues.contentType === ContentType.AUDIO &&
+        (!audioDuration || audioDuration <= 0) &&
+        formValues.audioFile
+      ) {
+        audioDuration = await getAudioDuration(formValues.audioFile);
+      }
+
+      // 3. Construct CreatePostDto payload and execute mutation
+      const payload: CreatePostPayloadType = {
+        title: formValues.title.trim(),
+        slug: formValues.slug.trim() || undefined,
+        content: formValues.content || undefined,
+        type: formValues.contentType,
+        thumbnailUrl: uploadedThumbUrl || undefined,
+        categoryId: formValues.categoryId || undefined,
+        ...(formValues.contentType === ContentType.AUDIO &&
+          uploadedAudioUrl && {
+            audio: {
+              audioUrl: uploadedAudioUrl,
+              duration:
+                audioDuration && audioDuration > 0
+                  ? Math.round(audioDuration)
+                  : undefined,
+              fileSize: formValues.audioFile?.size,
+              mimeType: formValues.audioFile?.type || "audio/mpeg",
+            },
+          }),
+      };
+
+      createPostMutation.mutate(payload);
     } catch (err: unknown) {
       const errorMsg =
         (err as { response?: { data?: { message?: string } } })?.response?.data
@@ -208,10 +257,21 @@ export const StepPostDetails: React.FC<StepPostDetailsProps> = ({
       {validationSuccess && (
         <div
           role="status"
-          className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 animate-fade-in"
+          className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 animate-fade-in"
         >
-          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-          <span>{validationSuccess}</span>
+          <div className="flex items-start gap-2.5">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+            <span>{validationSuccess}</span>
+          </div>
+          {createdPost && (
+            <button
+              type="button"
+              onClick={() => router.push("/admin/post")}
+              className="rounded-lg bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-semibold hover:bg-emerald-800 transition-colors shrink-0"
+            >
+              Về danh sách bài viết
+            </button>
+          )}
         </div>
       )}
 
@@ -258,6 +318,7 @@ export const StepPostDetails: React.FC<StepPostDetailsProps> = ({
         <div className="pt-2">
           <AudioUpload
             audioFile={formValues.audioFile}
+            duration={formValues.audioDuration}
             audioKey={formValues.audioKey}
             isUploading={isAudioUploading}
             uploadProgress={audioProgress}
@@ -271,6 +332,9 @@ export const StepPostDetails: React.FC<StepPostDetailsProps> = ({
               });
               setValidationSuccess(null);
               setSubmitError(null);
+            }}
+            onDurationChange={(audioDuration) => {
+              onChangeFormValues({ audioDuration });
             }}
           />
         </div>
@@ -306,13 +370,18 @@ export const StepPostDetails: React.FC<StepPostDetailsProps> = ({
         <Button
           type="submit"
           variant="golden"
-          disabled={!isValid || isSubmitting}
+          disabled={!isValid || isSubmitting || createPostMutation.isPending}
           className="w-full sm:w-auto rounded-xl px-7 py-2.5 text-sm font-semibold shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {isSubmitting ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
               <span>Đang tải tệp lên S3...</span>
+            </>
+          ) : createPostMutation.isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Đang lưu bài viết...</span>
             </>
           ) : (
             <span>Tạo bài viết</span>
