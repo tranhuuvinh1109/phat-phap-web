@@ -29,3 +29,8 @@ Rules to maximize development speed and minimize token consumption:
   - Icons: `lucide-react`
   - Styling merge: `src/lib/utils` (`cn`)
 - Prevent code duplication across components.
+
+## 5. Command Execution Restrictions (STRICT)
+- **Git**: Never execute any `git` command (`git add`, `git commit`, `git push`, etc.) unless the user explicitly requests it.
+- **Build**: Never execute `yarn build`, `npm run build`, or `next build` unless the user explicitly requests it.
+

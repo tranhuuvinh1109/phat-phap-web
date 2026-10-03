@@ -45,3 +45,11 @@ To minimize token usage and latency during coding:
 - **Targeted Edits**: Never rewrite an entire 300-line file when only modifying 5 lines. Use precise block replacements.
 - **TypeScript Strictness**: Always supply explicit interfaces/types; avoid `any`.
 - **Validation**: Ensure imports match existing project files before finishing code changes.
+
+---
+
+## 5. Command Execution Restrictions (STRICT)
+
+- **Git Commands**: DO NOT run any `git` commands (`git add`, `git commit`, `git push`, etc.) unless the USER explicitly requests it in their prompt.
+- **Build Commands**: DO NOT run `yarn build` / `npm run build` / `next build` unless the USER explicitly requests it.
+
