@@ -3,4 +3,6 @@ export enum QueryKeyEnum {
   USER = "USER",
   GET_USER_PROFILE = "GET_USER_PROFILE",
   ME = "ME",
+  GET_CATEGORIES = "GET_CATEGORIES",
+  GET_POSTS = "GET_POSTS",
 }

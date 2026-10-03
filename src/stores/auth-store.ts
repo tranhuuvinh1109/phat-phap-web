@@ -6,6 +6,8 @@ import { clearTokens, getAuthToken, setAuthToken, setRefreshToken } from "@/lib/
 
 export interface AuthState {
   user: UserProfileResponseType | null;
+  accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   isHydrated: boolean;
 }
@@ -26,6 +28,8 @@ export const useAuthStore = create<AuthStore>()(
   persist(
     (set) => ({
       user: null,
+      accessToken: null,
+      refreshToken: null,
       isAuthenticated: false,
       isHydrated: false,
 
@@ -42,6 +46,8 @@ export const useAuthStore = create<AuthStore>()(
         }
         set({
           user,
+          accessToken,
+          refreshToken: refreshToken || null,
           isAuthenticated: true,
         });
       },
@@ -50,6 +56,8 @@ export const useAuthStore = create<AuthStore>()(
         clearTokens();
         set({
           user: null,
+          accessToken: null,
+          refreshToken: null,
           isAuthenticated: false,
         });
       },
@@ -61,6 +69,8 @@ export const useAuthStore = create<AuthStore>()(
       skipHydration: true, // Prevents SSR hydration mismatch in Next.js App Router
       partialize: (state) => ({
         user: state.user,
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
     }
@@ -69,5 +79,7 @@ export const useAuthStore = create<AuthStore>()(
 
 // Atomic selector hooks for optimal render performance
 export const useUser = () => useAuthStore((state) => state.user);
+export const useAccessToken = () => useAuthStore((state) => state.accessToken);
+export const useRefreshToken = () => useAuthStore((state) => state.refreshToken);
 export const useIsAuthenticated = () => useAuthStore((state) => state.isAuthenticated);
 export const useAuthHydrated = () => useAuthStore((state) => state.isHydrated);

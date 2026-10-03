@@ -3,4 +3,7 @@ export const API_URL = {
   signIn: "/auth/signin",
   refreshToken: "/auth/refresh",
   me: "/auth/me",
+  categories: "/categories",
+  presignedUploadUrl: "/files/presigned-upload-url",
+  posts: "/posts",
 };

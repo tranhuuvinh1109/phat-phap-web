@@ -20,16 +20,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
     useAuthStore.persist.rehydrate();
     setHydrated(true);
 
-    // 2. If token exists, sync latest user info from /me
+    // 2. If token exists in localStorage, sync fresh user info from api me
     const token = getAuthToken();
     if (token) {
       getMe()
         .then((userData) => {
-          setUser(userData);
+          if (userData) {
+            setUser(userData);
+          }
         })
-        .catch(() => {
-          // Token is invalid/expired and refresh failed
-          logout();
+        .catch((error: unknown) => {
+          // If 401 Unauthorized (token invalid/expired and refresh failed), clear session
+          const status = (error as { response?: { status?: number } })?.response?.status;
+          if (status === 401) {
+            logout();
+          }
         });
     }
 
