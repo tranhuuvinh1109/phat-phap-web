@@ -19,6 +19,31 @@ export const signIn = async (payload: SignInPayloadType): Promise<SignInResponse
 };
 
 export const getMe = async (): Promise<UserProfileResponseType> => {
-  const response = await apiClient.get<UserProfileResponseType>(API_URL.me);
-  return response.data;
+  try {
+    const response = await apiClient.get<
+      UserProfileResponseType | { user: UserProfileResponseType } | { data: UserProfileResponseType }
+    >(API_URL.me);
+
+    const data = response.data;
+    if (data && typeof data === "object") {
+      if ("user" in data && data.user) return data.user as UserProfileResponseType;
+      if ("data" in data && data.data) return data.data as UserProfileResponseType;
+    }
+    return data as UserProfileResponseType;
+  } catch (error: any) {
+    // If configured route returns 404, attempt fallback to /me (or /auth/me)
+    if (error?.response?.status === 404) {
+      const fallbackUrl = API_URL.me === "/me" ? "/auth/me" : "/me";
+      const fallbackResponse = await apiClient.get<
+        UserProfileResponseType | { user: UserProfileResponseType } | { data: UserProfileResponseType }
+      >(fallbackUrl);
+      const data = fallbackResponse.data;
+      if (data && typeof data === "object") {
+        if ("user" in data && data.user) return data.user as UserProfileResponseType;
+        if ("data" in data && data.data) return data.data as UserProfileResponseType;
+      }
+      return data as UserProfileResponseType;
+    }
+    throw error;
+  }
 };

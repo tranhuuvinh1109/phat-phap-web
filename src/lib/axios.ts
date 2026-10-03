@@ -10,32 +10,42 @@ const ACCESS_TOKEN_KEY = "access_token";
 const REFRESH_TOKEN_KEY = "refresh_token";
 
 /**
- * Token management helpers
+ * Token management helpers (stores both access_token and accessToken for universal compatibility)
  */
 export const getAuthToken = (): string | null => {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(ACCESS_TOKEN_KEY);
+  return (
+    localStorage.getItem(ACCESS_TOKEN_KEY) ||
+    localStorage.getItem("accessToken")
+  );
 };
 
 export const setAuthToken = (token: string): void => {
   if (typeof window === "undefined") return;
   localStorage.setItem(ACCESS_TOKEN_KEY, token);
+  localStorage.setItem("accessToken", token);
 };
 
 export const getRefreshToken = (): string | null => {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(REFRESH_TOKEN_KEY);
+  return (
+    localStorage.getItem(REFRESH_TOKEN_KEY) ||
+    localStorage.getItem("refreshToken")
+  );
 };
 
 export const setRefreshToken = (token: string): void => {
   if (typeof window === "undefined") return;
   localStorage.setItem(REFRESH_TOKEN_KEY, token);
+  localStorage.setItem("refreshToken", token);
 };
 
 export const clearTokens = (): void => {
   if (typeof window === "undefined") return;
   localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem("accessToken");
   localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem("refreshToken");
 };
 
 // Backwards compatibility alias
