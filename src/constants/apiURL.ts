@@ -1,6 +1,6 @@
 export const API_URL = {
-  signUp: "/signup",
-  signIn: "/signin",
-  refreshToken: "/refresh-token",
-  me: "/me",
+  signUp: "/auth/signup",
+  signIn: "/auth/signin",
+  refreshToken: "/auth/refresh",
+  me: "/auth/me",
 };

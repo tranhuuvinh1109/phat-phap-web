@@ -4,7 +4,7 @@ import { ButtonHTMLAttributes, FC, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger" | "success";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger" | "success" | "golden";
   size?: "sm" | "md" | "lg";
   isLoading?: boolean;
   leftIcon?: ReactNode;
@@ -33,6 +33,8 @@ export const Button: FC<ButtonProps> = (props) => {
         {
           // Variants
           "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500": variant === "primary",
+          "bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 text-white hover:from-amber-700 hover:to-amber-900 shadow-md shadow-amber-900/20 focus:ring-amber-500":
+            variant === "golden",
           "bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500":
             variant === "secondary",
           "border border-gray-300 bg-transparent hover:bg-gray-100 focus:ring-gray-500":
