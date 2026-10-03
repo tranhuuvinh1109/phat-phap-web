@@ -3,6 +3,7 @@
 import {
   ArrowLeft,
   ChevronRight,
+  FileText,
   FolderTree,
   LayoutDashboard,
   Menu,
@@ -30,6 +31,7 @@ interface AdminNavItem {
 
 const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { id: "dashboard", label: "Tổng quan", href: "/admin", icon: LayoutDashboard },
+  { id: "post", label: "Bài viết", href: "/admin/post", icon: FileText },
   { id: "category", label: "Danh mục", href: "/admin/category", icon: FolderTree },
   { id: "users", label: "Người dùng", href: "/admin/users", icon: Users },
   { id: "settings", label: "Cài đặt", href: "/admin/settings", icon: Settings },
@@ -163,12 +165,30 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <Link href="/admin" className="hover:text-amber-800 transition-colors">
                 Quản trị
               </Link>
-              <ChevronRight className="h-3.5 w-3.5 text-neutral-400" />
-              <Link href="/admin/category" className="hover:text-amber-800 transition-colors">
-                Danh mục
-              </Link>
-              <ChevronRight className="h-3.5 w-3.5 text-neutral-400" />
-              <span className="text-amber-900 font-semibold">Tạo mới</span>
+              {pathname.startsWith("/admin/post") && (
+                <>
+                  <ChevronRight className="h-3.5 w-3.5 text-neutral-400" />
+                  <Link href="/admin/post" className="hover:text-amber-800 transition-colors">
+                    Bài viết
+                  </Link>
+                  {pathname === "/admin/post/create-post" && (
+                    <>
+                      <ChevronRight className="h-3.5 w-3.5 text-neutral-400" />
+                      <span className="text-amber-900 font-semibold">Tạo mới</span>
+                    </>
+                  )}
+                </>
+              )}
+              {pathname.startsWith("/admin/category") && (
+                <>
+                  <ChevronRight className="h-3.5 w-3.5 text-neutral-400" />
+                  <Link href="/admin/category" className="hover:text-amber-800 transition-colors">
+                    Danh mục
+                  </Link>
+                  <ChevronRight className="h-3.5 w-3.5 text-neutral-400" />
+                  <span className="text-amber-900 font-semibold">Tạo mới</span>
+                </>
+              )}
             </div>
           </div>
 
