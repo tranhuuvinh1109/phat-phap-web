@@ -3,4 +3,5 @@ export const API_URL = {
   signIn: "/auth/signin",
   refreshToken: "/auth/refresh",
   me: "/auth/me",
+  categories: "/categories",
 };

@@ -5,6 +5,7 @@ import Image from "next/image";
 import React, { useState } from "react";
 
 import { LotusLogo } from "@/components/shared/lotus-logo";
+import { useUser } from "@/stores/auth-store";
 
 interface HeaderProps {
   onOpenMobileSidebar?: () => void;
@@ -15,10 +16,19 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   onOpenMobileSidebar,
-  userName = "Vinh",
-  avatarUrl = "/images/lotus-thumb.jpg",
+  userName,
+  avatarUrl,
   onSearch,
 }) => {
+  const user = useUser();
+  const displayName =
+    userName ??
+    (user?.name ||
+      user?.fullName ||
+      (user?.email ? user.email.split("@")[0] : "Vinh"));
+  const displayAvatar =
+    avatarUrl ?? (user?.avatarUrl || "/images/lotus-thumb.jpg");
+
   const [searchValue, setSearchValue] = useState("");
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -67,11 +77,11 @@ export const Header: React.FC<HeaderProps> = ({
       {/* User Profile Info on Right */}
       <div className="flex cursor-pointer items-center gap-2.5 rounded-full py-1 pr-2 pl-1 transition-colors select-none hover:bg-[#F0E8D9] sm:gap-3">
         <div className="relative h-8 w-8 overflow-hidden rounded-full border border-amber-600/30 ring-1 ring-amber-600/10 sm:h-9 sm:w-9">
-          <Image src={avatarUrl} alt={userName} fill className="object-cover" />
+          <Image src={displayAvatar} alt={displayName} fill className="object-cover" />
         </div>
         <div className="hidden items-center gap-1 text-sm sm:flex">
           <span className="text-neutral-500">Xin chào,</span>
-          <span className="font-semibold text-neutral-800">{userName}</span>
+          <span className="font-semibold text-neutral-800">{displayName}</span>
           <ChevronDown className="h-4 w-4 text-neutral-500" />
         </div>
       </div>
