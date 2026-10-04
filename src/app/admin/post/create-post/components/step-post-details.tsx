@@ -349,6 +349,7 @@ export const StepPostDetails: React.FC<StepPostDetailsProps> = ({
               onChangeFormValues({ content });
               setValidationSuccess(null);
               setSubmitError(null);
+              console.log({content})
             }}
           />
         </div>

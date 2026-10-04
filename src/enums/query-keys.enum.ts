@@ -5,4 +5,5 @@ export enum QueryKeyEnum {
   ME = "ME",
   GET_CATEGORIES = "GET_CATEGORIES",
   GET_POSTS = "GET_POSTS",
+  GET_POST_DETAIL = "GET_POST_DETAIL",
 }

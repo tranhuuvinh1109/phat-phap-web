@@ -1,11 +1,28 @@
 "use client";
 
-import { AlertCircle, Loader2, Music, Pause, Play, RefreshCw, Volume2 } from "lucide-react";
+import {
+  AlertCircle,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  Loader2,
+  Music,
+  Pause,
+  Play,
+  RefreshCw,
+  Volume2,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React, { useMemo, useRef, useState } from "react";
 
 import { useGetPosts } from "@/api/post";
 import type { PostItemType } from "@/api/post/post.type";
-import { formatTime } from "@/lib/utils/format-time";
+import { ContentType } from "@/enums";
+import { formatTime, stripHtml } from "@/lib/utils";
+
+import { PostContentRenderer } from "./post-content-renderer";
 
 interface CategoryGroup {
   id: string;
@@ -18,13 +35,16 @@ interface CategoryGroup {
 interface CategorizedPostsProps {
   className?: string;
   titleOverride?: string;
+  isAdmin?: boolean;
 }
 
 export const CategorizedPosts: React.FC<CategorizedPostsProps> = ({
   className = "",
 }) => {
+  const router = useRouter();
   const { data, isLoading, isError, error, refetch } = useGetPosts();
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [expandedPostIds, setExpandedPostIds] = useState<Set<string>>(new Set());
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const posts: PostItemType[] = useMemo(() => {
@@ -72,7 +92,9 @@ export const CategorizedPosts: React.FC<CategorizedPostsProps> = ({
   }, [posts]);
 
   // Play / Pause Audio Handler
-  const handleTogglePlay = (post: PostItemType) => {
+  const handleTogglePlay = (post: PostItemType, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    e?.preventDefault();
     const audioUrl = post.audio?.audioUrl;
     if (!audioUrl) return;
 
@@ -93,6 +115,21 @@ export const CategorizedPosts: React.FC<CategorizedPostsProps> = ({
           });
       }
     }
+  };
+
+  // Toggle inline expansion for content preview
+  const handleToggleExpand = (postId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    e?.preventDefault();
+    setExpandedPostIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(postId)) {
+        next.delete(postId);
+      } else {
+        next.add(postId);
+      }
+      return next;
+    });
   };
 
   // Helper to format duration string
@@ -177,132 +214,212 @@ export const CategorizedPosts: React.FC<CategorizedPostsProps> = ({
         className="hidden"
       />
 
-      {groupedCategories.map((group) => {
-        // --- 1. Nhóm Bạch thoại Phật Pháp: Hiển thị đầy đủ Thumbnail, Title, Duration (Volume Icon), Play Button ---
-        if (group.isBachThoai) {
-          return (
-            <section
-              key={group.id}
-              className="rounded-2xl border border-[#EDE5D8]/90 bg-white/90 p-3.5 shadow-2xs backdrop-blur-xs sm:rounded-3xl sm:p-4"
-            >
-              {/* Header */}
-              <h3 className="px-1 pb-3 text-base font-bold text-neutral-900 sm:text-lg">
+      {groupedCategories.map((group) => (
+        <section
+          key={group.id}
+          className="rounded-2xl border border-[#EDE5D8]/90 bg-white/90 p-3.5 shadow-2xs backdrop-blur-xs sm:rounded-3xl sm:p-4"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-1 pb-3">
+            {group.isBachThoai ? (
+              <Link
+                href="/bach-thoai-phat-phap"
+                className="group/title flex items-center gap-1.5 transition hover:text-amber-800"
+              >
+                <h3 className="text-base font-bold text-neutral-900 group-hover/title:text-amber-800 sm:text-lg">
+                  {group.name}
+                </h3>
+                <span className="text-xs font-semibold text-amber-700 hover:underline">
+                  →
+                </span>
+              </Link>
+            ) : (
+              <h3 className="text-base font-bold text-neutral-900 sm:text-lg">
                 {group.name}
               </h3>
+            )}
+            <span className="rounded-full bg-amber-50 border border-amber-200/60 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+              {group.posts.length} bài
+            </span>
+          </div>
 
-              {/* Items List */}
-              <div className="space-y-2.5">
-                {group.posts.map((post) => {
-                  const isCurrentPlaying = playingId === post.id;
-                  const hasAudio = !!post.audio?.audioUrl;
 
-                  return (
-                    <div
-                      key={post.id}
-                      className={`group flex items-center justify-between gap-3 rounded-xl p-2 transition-all duration-200 hover:bg-[#FAF4EB] ${
-                        isCurrentPlaying ? "bg-[#FAF2E6] ring-1 ring-amber-300/80" : ""
-                      }`}
+          {/* Items List */}
+          <div className="space-y-3">
+            {group.posts.map((post) => {
+              const isCurrentPlaying = playingId === post.id;
+              const hasAudio = !!post.audio?.audioUrl || post.type === ContentType.AUDIO;
+              const isNormal = post.type === ContentType.NORMAL || (!hasAudio && !!post.content);
+              const isExpanded = expandedPostIds.has(post.id);
+              const plainContentSnippet = post.content ? stripHtml(post.content) : "";
+              const postUrl = `/post/${encodeURIComponent(post.slug || post.id)}`;
+
+              return (
+                <div
+                  key={post.id}
+                  className={`group rounded-xl border border-neutral-100 p-2.5 transition-all duration-200 hover:border-amber-200 hover:bg-[#FAF4EB]/60 ${
+                    isCurrentPlaying ? "bg-[#FAF2E6] ring-1 ring-amber-300/80" : "bg-white/80"
+                  }`}
+                >
+                  {/* Top Row: Thumbnail + Main Info + Actions */}
+                  <div
+                    onClick={() => {
+                      if (isNormal) {
+                        router.push(postUrl);
+                      }
+                    }}
+                    className={`flex items-start justify-between gap-3 ${
+                      isNormal ? "cursor-pointer" : ""
+                    }`}
+                  >
+                    {/* Thumbnail */}
+                    <Link
+                      href={postUrl}
+                      onClick={(e) => {
+                        if (!isNormal && hasAudio) {
+                          e.preventDefault();
+                          handleTogglePlay(post);
+                        }
+                      }}
+                      className="relative h-13 w-13 shrink-0 overflow-hidden rounded-xl border border-amber-900/10 bg-amber-50/50 mt-0.5 block"
                     >
-                      {/* Left: Thumbnail & Info */}
-                      <div className="flex min-w-0 flex-1 items-center gap-3">
-                        <div className="relative h-13 w-13 shrink-0 overflow-hidden rounded-xl border border-amber-900/10 bg-amber-50/50">
-                          <img
-                            src={post.thumbnailUrl || "/images/lotus-thumb.jpg"}
-                            alt={post.title}
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).src = "/images/lotus-thumb.jpg";
-                            }}
-                          />
-                        </div>
+                      <img
+                        src={post.thumbnailUrl || "/images/lotus-thumb.jpg"}
+                        alt={post.title}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = "/images/lotus-thumb.jpg";
+                        }}
+                      />
+                    </Link>
 
-                        <div className="min-w-0 flex-1 space-y-1">
-                          <h4
-                            title={post.title}
-                            className="truncate text-xs font-semibold text-neutral-800 transition-colors group-hover:text-amber-900 sm:text-sm"
-                          >
-                            {post.title}
-                          </h4>
-                          <div className="flex items-center gap-1.5 text-[11px] text-neutral-400">
+                    {/* Middle Info */}
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <Link
+                          href={postUrl}
+                          className="text-xs font-bold text-neutral-800 transition-colors group-hover:text-amber-900 sm:text-sm leading-snug line-clamp-2 hover:underline"
+                        >
+                          {post.title}
+                        </Link>
+
+                        {/* Content Type Badge */}
+                        {isNormal ? (
+                          <span className="shrink-0 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200/60">
+                            Bài đọc
+                          </span>
+                        ) : (
+                          <span className="shrink-0 rounded-md bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700 border border-sky-200/60">
+                            Audio
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Excerpt Snippet (For NORMAL posts with HTML content) */}
+                      {isNormal && plainContentSnippet && (
+                        <p className="line-clamp-2 text-xs text-neutral-500 font-normal leading-relaxed">
+                          {plainContentSnippet}
+                        </p>
+                      )}
+
+                      {/* Meta line: Author & Audio duration */}
+                      <div className="flex items-center gap-3 text-[11px] text-neutral-400">
+                        {post.author?.name && (
+                          <span className="truncate text-amber-800/80 font-medium">
+                            {post.author.name}
+                          </span>
+                        )}
+
+                        {hasAudio && (
+                          <div className="flex items-center gap-1">
                             <Volume2 className="h-3 w-3 shrink-0 text-neutral-400" />
                             <span>{getDurationText(post)}</span>
                           </div>
-                        </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right: Actions */}
+                    <div className="flex items-center gap-1.5 shrink-0 self-center">
+                      {/* Audio Button */}
+                      {hasAudio && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleTogglePlay(post, e)}
+                          disabled={!post.audio?.audioUrl}
+                          aria-label={isCurrentPlaying ? `Tạm dừng ${post.title}` : `Phát ${post.title}`}
+                          className={`flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${
+                            isCurrentPlaying
+                              ? "border-amber-700 bg-amber-600 text-white shadow-xs"
+                              : "border-neutral-300/80 text-neutral-600 hover:border-amber-700 hover:bg-amber-600 hover:text-white"
+                          }`}
+                        >
+                          {isCurrentPlaying ? (
+                            <Pause className="h-3.5 w-3.5 fill-current" />
+                          ) : (
+                            <Play className="ml-0.5 h-3.5 w-3.5 fill-current" />
+                          )}
+                        </button>
+                      )}
+
+                      {/* Normal Post Reading Button: Redirects directly to /post/slug */}
+                      {isNormal && (
+                        <Link
+                          href={postUrl}
+                          onClick={(e) => e.stopPropagation()}
+                          title="Đọc bài viết"
+                          className="flex h-8 items-center gap-1.5 rounded-lg border border-amber-300/80 bg-amber-50/80 px-2.5 text-xs font-semibold text-amber-800 transition hover:bg-amber-100 hover:border-amber-400 shadow-2xs"
+                        >
+                          <BookOpen className="h-3.5 w-3.5 text-amber-700" />
+                          <span className="hidden sm:inline">Đọc bài</span>
+                        </Link>
+                      )}
+
+                      {/* Quick Inline Expand Toggle */}
+                      {post.content && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleToggleExpand(post.id, e)}
+                          title={isExpanded ? "Thu gọn nội dung" : "Xem nhanh nội dung"}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 transition"
+                        >
+                          {isExpanded ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Inline Collapsible Content Preview */}
+                  {isExpanded && post.content && (
+                    <div className="mt-3 pt-3 border-t border-amber-100/80 bg-white/90 rounded-xl p-3.5 text-xs sm:text-sm">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
+                          <Eye className="h-3.5 w-3.5" />
+                          <span>Xem nhanh nội dung</span>
+                        </span>
+                        <Link
+                          href={postUrl}
+                          className="text-[11px] font-semibold text-amber-700 hover:underline"
+                        >
+                          Đọc toàn bộ bài viết →
+                        </Link>
                       </div>
 
-                      {/* Right: Circular Play/Pause Button */}
-                      <button
-                        type="button"
-                        onClick={() => handleTogglePlay(post)}
-                        disabled={!hasAudio}
-                        aria-label={isCurrentPlaying ? `Tạm dừng ${post.title}` : `Phát ${post.title}`}
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-colors ${
-                          isCurrentPlaying
-                            ? "border-amber-700 bg-amber-600 text-white shadow-xs"
-                            : hasAudio
-                            ? "border-neutral-300/80 text-neutral-500 hover:border-amber-700 hover:bg-amber-600 hover:text-white"
-                            : "cursor-not-allowed border-neutral-200 text-neutral-300"
-                        }`}
-                      >
-                        {isCurrentPlaying ? (
-                          <Pause className="h-3 w-3 fill-current" />
-                        ) : (
-                          <Play className="ml-0.5 h-3.5 w-3.5 fill-current" />
-                        )}
-                      </button>
+                      <div className="max-h-60 overflow-y-auto pr-1">
+                        <PostContentRenderer content={post.content} />
+                      </div>
                     </div>
-                  );
-                })}
-              </div>
-            </section>
-          );
-        }
-
-        // --- 2. Các danh mục khác: Chỉ hiển thị Thumbnail và Title (chưa cần hiển thị details) ---
-        return (
-          <section
-            key={group.id}
-            className="rounded-2xl border border-[#EDE5D8]/90 bg-white/90 p-3.5 shadow-2xs backdrop-blur-xs sm:rounded-3xl sm:p-4"
-          >
-            {/* Header */}
-            <h3 className="px-1 pb-3 text-base font-bold text-neutral-900 sm:text-lg">
-              {group.name}
-            </h3>
-
-            {/* Items List (Only Thumbnail & Title) */}
-            <div className="space-y-2.5">
-              {group.posts.map((post) => (
-                <div
-                  key={post.id}
-                  className="group flex items-center gap-3 rounded-xl p-2 transition-all duration-200 hover:bg-[#FAF4EB]"
-                >
-                  {/* Thumbnail */}
-                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-amber-900/10 bg-amber-50/50">
-                    <img
-                      src={post.thumbnailUrl || "/images/buddha-thumb.jpg"}
-                      alt={post.title}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = "/images/buddha-thumb.jpg";
-                      }}
-                    />
-                  </div>
-
-                  {/* Title Only */}
-                  <div className="min-w-0 flex-1">
-                    <h4
-                      title={post.title}
-                      className="truncate text-xs font-semibold text-neutral-800 transition-colors group-hover:text-amber-900 sm:text-sm"
-                    >
-                      {post.title}
-                    </h4>
-                  </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          </section>
-        );
-      })}
+              );
+            })}
+          </div>
+        </section>
+      ))}
     </div>
   );
 };

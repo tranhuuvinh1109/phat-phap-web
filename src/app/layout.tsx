@@ -1,5 +1,6 @@
 import { type FC } from "react";
 
+import { PersistentAudioPlayer } from "@/components/audio";
 import { AuthProvider, QueryProvider } from "@/components/providers";
 import { geistMono, geistSans } from "@/config";
 
@@ -13,13 +14,16 @@ export const metadata: Metadata = {
 
 type TProps = Readonly<IChildren>;
 const RootLayout: FC<TProps> = ({ children }) => (
-  <html lang="en" suppressHydrationWarning>
+  <html lang="vi" suppressHydrationWarning>
     <body
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       suppressHydrationWarning
     >
       <QueryProvider>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <PersistentAudioPlayer />
+        </AuthProvider>
       </QueryProvider>
     </body>
   </html>

@@ -45,3 +45,33 @@ export const getPosts = async (
 
   return { data: [], meta: { total: 0, limit: 10, nextCursor: null, hasNextPage: false } };
 };
+
+/**
+ * API call to get a single post by slug via GET /posts/slug/:slug
+ */
+export const getPostBySlug = async (slug: string): Promise<PostItemType> => {
+  try {
+    const response = await apiClient.get<PostItemType | { data: PostItemType }>(
+      API_URL.postBySlug(slug)
+    );
+
+    const data = response.data;
+    if (data && typeof data === "object" && "data" in data) {
+      return (data as { data: PostItemType }).data;
+    }
+
+    return data as PostItemType;
+  } catch (error) {
+    // Fallback: If network or route issue occurs, search in posts list by slug
+    const allPosts = await getPosts();
+    const matched = allPosts.data.find(
+      (p) => p.slug === slug || p.id === slug
+    );
+    if (matched) {
+      return matched;
+    }
+    throw error;
+  }
+};
+
+

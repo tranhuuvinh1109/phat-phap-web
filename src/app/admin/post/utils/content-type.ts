@@ -1,3 +1,4 @@
+import { PostItemType } from "@/api/post";
 import { ContentType } from "@/enums";
 
 /**
@@ -12,3 +13,10 @@ export function getContentTypeByCategory(categoryId: string): ContentType {
 
   return ContentType.NORMAL;
 }
+
+
+export function isBachThoaiPhatPhapCategory(data?: PostItemType | null): boolean {
+  if (!data?.category) return false;
+  return data.category.id === "f19d8640-92c1-4b04-9a62-a88997969619"
+}
+

@@ -31,7 +31,7 @@ const QUILL_MODULES = {
     [{ list: "ordered" }, { list: "bullet" }],
     ["blockquote", "code-block"],
     [{ align: [] }],
-    ["link", "image"],
+    ["link"],
     ["clean"],
   ],
 };
@@ -43,7 +43,6 @@ const QUILL_FORMATS = [
   "underline",
   "strike",
   "list",
-  "bullet",
   "blockquote",
   "code-block",
   "align",
@@ -128,7 +127,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
             {value ? (
               <div
                 dangerouslySetInnerHTML={{ __html: value }}
-                className="quill-content-preview"
+                className="quill-content-preview rich-post-content w-full max-w-full"
               />
             ) : (
               <p className="text-neutral-400 italic">Chưa có nội dung để xem trước.</p>
