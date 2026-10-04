@@ -17,6 +17,7 @@ import React from "react";
 
 import { LotusLogo } from "@/components/shared/lotus-logo";
 import { BOTTOM_NAV_ITEMS, MAIN_NAV_ITEMS, NavItem } from "@/constants/home.constants";
+import { useFavoritesCount } from "@/stores";
 
 interface SidebarProps {
   activeId?: string;
@@ -41,27 +42,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isMobileOpen = false,
   onCloseMobile,
 }) => {
+  const favoritesCount = useFavoritesCount();
+
   const renderNavItem = (item: NavItem) => {
     const Icon = ICON_MAP[item.iconName] || Home;
     const isActive = item.id === activeId;
+    const isFavoriteNav = item.id === "favorites" || item.id === "bookmarks";
 
     return (
       <Link
         key={item.id}
         href={item.href}
         onClick={onCloseMobile}
-        className={`group flex items-center gap-3.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
+        className={`group flex items-center justify-between gap-3.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
           isActive
             ? "bg-[#F3E8D8] font-semibold text-[#9C5812] shadow-xs"
             : "text-[#6C6356] hover:bg-[#F8F2E8] hover:text-[#9C5812]"
         }`}
       >
-        <Icon
-          className={`h-4.5 w-4.5 shrink-0 transition-colors ${
-            isActive ? "text-[#9C5812]" : "text-[#7D7364] group-hover:text-[#9C5812]"
-          }`}
-        />
-        <span>{item.label}</span>
+        <div className="flex items-center gap-3.5 min-w-0">
+          <Icon
+            className={`h-4.5 w-4.5 shrink-0 transition-colors ${
+              isActive ? "text-[#9C5812]" : "text-[#7D7364] group-hover:text-[#9C5812]"
+            }`}
+          />
+          <span className="truncate">{item.label}</span>
+        </div>
+
+        {/* Dynamic Badge for Favorites Count */}
+        {isFavoriteNav && favoritesCount > 0 && (
+          <span className="flex h-5 min-w-5 px-1.5 items-center justify-center rounded-full bg-[#B86E0E] text-[10px] font-bold text-white shadow-2xs">
+            {favoritesCount}
+          </span>
+        )}
       </Link>
     );
   };

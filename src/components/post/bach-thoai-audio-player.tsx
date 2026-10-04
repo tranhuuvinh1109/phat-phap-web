@@ -17,7 +17,7 @@ import React, { useState } from "react";
 
 import type { PostItemType } from "@/api/post/post.type";
 import { formatTime } from "@/lib/utils";
-import { useAudioPlayerStore } from "@/stores";
+import { useAudioPlayerStore, useFavoritesStore, useIsFavorite } from "@/stores";
 
 interface BachThoaiAudioPlayerProps {
   post: PostItemType;
@@ -50,10 +50,14 @@ export const BachThoaiAudioPlayer: React.FC<BachThoaiAudioPlayerProps> = ({
   const setSleepTimer = useAudioPlayerStore((s) => s.setSleepTimer);
   const showMiniPlayer = useAudioPlayerStore((s) => s.showMiniPlayer);
 
+  // Favorites Store
+  const isBookmarked = useIsFavorite(post.id);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+
   // Local UI State
-  const [isBookmarked, setIsBookmarked] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Audio source: prefer post.audio.audioUrl or sample audio
   const audioSource =
@@ -87,6 +91,27 @@ export const BachThoaiAudioPlayer: React.FC<BachThoaiAudioPlayerProps> = ({
         duration: post.audio?.duration || 1965,
       });
     }
+  };
+
+  // Toggle Favorite
+  const handleToggleFavorite = () => {
+    const isSaved = toggleFavorite({
+      id: post.id,
+      title: post.title,
+      slug: post.slug || post.id,
+      authorName: post.author?.name || "TT. Thích Minh Niệm",
+      categoryName: post.category?.name || "Bạch thoại Phật pháp",
+      thumbnailUrl: post.thumbnailUrl || "/images/lotus-thumb.jpg",
+      audioUrl: audioSource,
+      duration: post.audio?.duration || 1965,
+      type: post.type || "AUDIO",
+    });
+    setToastMessage(
+      isSaved
+        ? "Đã lưu vào danh sách yêu thích!"
+        : "Đã xóa khỏi danh sách yêu thích!"
+    );
+    setTimeout(() => setToastMessage(null), 2500);
   };
 
   // Skip forward / backward
@@ -212,9 +237,10 @@ export const BachThoaiAudioPlayer: React.FC<BachThoaiAudioPlayerProps> = ({
             {/* Bookmark Toggle */}
             <button
               type="button"
-              onClick={() => setIsBookmarked((prev) => !prev)}
-              aria-label="Đánh dấu"
-              className={`flex h-10 w-10 items-center justify-center rounded-xl transition ${
+              onClick={handleToggleFavorite}
+              aria-label={isBookmarked ? "Bỏ lưu bài viết" : "Lưu vào yêu thích"}
+              title={isBookmarked ? "Bỏ lưu bài viết" : "Lưu vào yêu thích"}
+              className={`flex h-10 w-10 items-center justify-center rounded-xl transition cursor-pointer ${
                 isBookmarked
                   ? "text-amber-700 bg-amber-50"
                   : "text-neutral-500 hover:bg-[#FAF4EB] hover:text-amber-800"
@@ -421,10 +447,10 @@ export const BachThoaiAudioPlayer: React.FC<BachThoaiAudioPlayerProps> = ({
         </div>
 
 
-        {/* Copy Toast Alert */}
-        {isCopied && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-neutral-900/90 text-white border border-neutral-700 px-4 py-2 text-xs font-semibold shadow-xl backdrop-blur-md">
-            Đã sao chép liên kết bài giảng!
+        {/* Toast Alert */}
+        {(isCopied || toastMessage) && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-neutral-900/90 text-white border border-neutral-700 px-4 py-2 text-xs font-semibold shadow-xl backdrop-blur-md z-50 animate-in fade-in slide-in-from-bottom-2">
+            {toastMessage || "Đã sao chép liên kết bài giảng!"}
           </div>
         )}
       </div>

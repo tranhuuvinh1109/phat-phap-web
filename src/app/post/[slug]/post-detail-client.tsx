@@ -3,6 +3,7 @@
 import {
   AlertCircle,
   ArrowLeft,
+  Bookmark,
   BookOpen,
   Calendar,
   Clock,
@@ -19,7 +20,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 
 import { useGetPostBySlug } from "@/api/post";
 import type { PostItemType } from "@/api/post/post.type";
@@ -33,7 +34,7 @@ import {
 import { Button } from "@/components/ui";
 import { ContentType } from "@/enums";
 import { formatTime } from "@/lib/utils";
-import { useAudioPlayerStore } from "@/stores";
+import { useAudioPlayerStore, useFavoritesStore, useIsFavorite } from "@/stores";
 
 // Mock fallback items matching the provided design image for fallback support
 const FALLBACK_BACH_THOAI_ITEMS = [
@@ -91,6 +92,10 @@ export const PostDetailClient: React.FC = () => {
   const playTrack = useAudioPlayerStore((s) => s.playTrack);
   const togglePlay = useAudioPlayerStore((s) => s.togglePlay);
 
+  // Favorites Store
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
   // Fallback for default mock items from /bach-thoai-phat-phap if API returned 404
   const fallbackItem = FALLBACK_BACH_THOAI_ITEMS.find(
     (item) => item.slug === slug || item.id === slug
@@ -129,6 +134,8 @@ export const PostDetailClient: React.FC = () => {
         } as PostItemType)
       : null);
 
+  const isBookmarked = useIsFavorite(displayPost?.id);
+
   // Check if post belongs to Bạch thoại Phật pháp
   const isBachThoai = displayPost ? isBachThoaiPhatPhapCategory(displayPost) : false;
   const isCurrentPostPlaying =
@@ -151,6 +158,27 @@ export const PostDetailClient: React.FC = () => {
         duration: displayPost.audio.duration || undefined,
       });
     }
+  };
+
+  const handleToggleFavorite = () => {
+    if (!displayPost) return;
+    const isSaved = toggleFavorite({
+      id: displayPost.id,
+      title: displayPost.title,
+      slug: displayPost.slug || displayPost.id,
+      authorName: displayPost.author?.name || "Tác giả",
+      categoryName: displayPost.category?.name || "Bạch thoại Phật pháp",
+      thumbnailUrl: displayPost.thumbnailUrl || "/images/lotus-thumb.jpg",
+      audioUrl: displayPost.audio?.audioUrl,
+      duration: displayPost.audio?.duration || undefined,
+      type: displayPost.type,
+    });
+    setToastMessage(
+      isSaved
+        ? "Đã lưu vào danh sách yêu thích!"
+        : "Đã xóa khỏi danh sách yêu thích!"
+    );
+    setTimeout(() => setToastMessage(null), 2500);
   };
 
   const handleCopyLink = () => {
@@ -322,15 +350,37 @@ export const PostDetailClient: React.FC = () => {
                       </span>
                     </div>
 
-                    {/* Share button */}
-                    <button
-                      type="button"
-                      onClick={handleCopyLink}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition"
-                    >
-                      <Share2 className="h-3.5 w-3.5" />
-                      <span>{isCopied ? "Đã sao chép!" : "Chia sẻ"}</span>
-                    </button>
+                    {/* Action buttons: Bookmark & Share */}
+                    <div className="flex items-center gap-2">
+                      {/* Bookmark button */}
+                      <button
+                        type="button"
+                        onClick={handleToggleFavorite}
+                        title={isBookmarked ? "Bỏ lưu bài viết" : "Lưu vào bài viết yêu thích"}
+                        className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
+                          isBookmarked
+                            ? "border-amber-300 bg-amber-50 text-amber-850 shadow-2xs"
+                            : "border-neutral-200 bg-neutral-50 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+                        }`}
+                      >
+                        <Bookmark
+                          className={`h-3.5 w-3.5 ${
+                            isBookmarked ? "fill-amber-600 text-amber-600" : ""
+                          }`}
+                        />
+                        <span>{isBookmarked ? "Đã lưu" : "Lưu bài viết"}</span>
+                      </button>
+
+                      {/* Share button */}
+                      <button
+                        type="button"
+                        onClick={handleCopyLink}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition cursor-pointer"
+                      >
+                        <Share2 className="h-3.5 w-3.5" />
+                        <span>{isCopied ? "Đã sao chép!" : "Chia sẻ"}</span>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Article Title */}
@@ -454,6 +504,13 @@ export const PostDetailClient: React.FC = () => {
             </aside>
           </div>
         </main>
+
+        {/* Toast Alert */}
+        {(isCopied || toastMessage) && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-neutral-900/90 text-white border border-neutral-700 px-4 py-2 text-xs font-semibold shadow-xl backdrop-blur-md z-50 animate-in fade-in slide-in-from-bottom-2">
+            {toastMessage || "Đã sao chép liên kết bài viết!"}
+          </div>
+        )}
       </div>
     </div>
   );
