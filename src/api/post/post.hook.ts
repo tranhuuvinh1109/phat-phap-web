@@ -10,7 +10,7 @@ import {
 import { AxiosError } from "axios";
 
 import { QueryKeyEnum } from "@/enums";
-import { createPost, getPosts } from "./post.api";
+import { createPost, getPostBySlug, getPosts } from "./post.api";
 import { CreatePostPayloadType, GetPostsResponse, PostItemType } from "./post.type";
 
 export type UseCreatePostOptions = Omit<
@@ -57,3 +57,24 @@ export const useGetPosts = (
     ...options,
   });
 };
+
+export type UseGetPostBySlugOptions = Omit<
+  UseQueryOptions<PostItemType, AxiosError>,
+  "queryKey" | "queryFn"
+>;
+
+/**
+ * Query hook to fetch a single post by slug via GET /posts/:slug
+ */
+export const useGetPostBySlug = (
+  slug: string,
+  options?: UseGetPostBySlugOptions
+): UseQueryResult<PostItemType, AxiosError> => {
+  return useQuery({
+    queryKey: [QueryKeyEnum.GET_POST_DETAIL, slug],
+    queryFn: () => getPostBySlug(slug),
+    enabled: !!slug,
+    ...options,
+  });
+};
+

@@ -5,4 +5,5 @@ export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
 
 export * from "./audio";
 export * from "./format-time";
+export * from "./html";
 export * from "./slugify";

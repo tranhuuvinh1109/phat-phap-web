@@ -1,10 +1,12 @@
 "use client";
 
-import { ChevronDown, Menu, Search } from "lucide-react";
+import { Bookmark, ChevronDown, Menu, Search } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import React, { useState } from "react";
 
 import { LotusLogo } from "@/components/shared/lotus-logo";
+import { useFavoritesCount } from "@/stores";
 import { useUser } from "@/stores/auth-store";
 
 interface HeaderProps {
@@ -21,6 +23,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSearch,
 }) => {
   const user = useUser();
+  const favoritesCount = useFavoritesCount();
   const displayName =
     userName ??
     (user?.name ||
@@ -74,15 +77,32 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </form>
 
-      {/* User Profile Info on Right */}
-      <div className="flex cursor-pointer items-center gap-2.5 rounded-full py-1 pr-2 pl-1 transition-colors select-none hover:bg-[#F0E8D9] sm:gap-3">
-        <div className="relative h-8 w-8 overflow-hidden rounded-full border border-amber-600/30 ring-1 ring-amber-600/10 sm:h-9 sm:w-9">
-          <Image src={displayAvatar} alt={displayName} fill className="object-cover" />
-        </div>
-        <div className="hidden items-center gap-1 text-sm sm:flex">
-          <span className="text-neutral-500">Xin chào,</span>
-          <span className="font-semibold text-neutral-800">{displayName}</span>
-          <ChevronDown className="h-4 w-4 text-neutral-500" />
+      {/* Right Actions: Favorites Button & User Profile */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Quick Link to Favorites Page */}
+        <Link
+          href="/yeu-thich"
+          title="Bài viết đã lưu / Yêu thích"
+          className="relative flex h-10 w-10 items-center justify-center rounded-xl text-neutral-600 transition hover:bg-[#F0E8D9] hover:text-[#9C5812]"
+        >
+          <Bookmark className="h-5 w-5" />
+          {favoritesCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-4.5 min-w-4.5 px-1 items-center justify-center rounded-full bg-[#B86E0E] text-[10px] font-bold text-white shadow-xs">
+              {favoritesCount}
+            </span>
+          )}
+        </Link>
+
+        {/* User Profile Info */}
+        <div className="flex cursor-pointer items-center gap-2.5 rounded-full py-1 pr-2 pl-1 transition-colors select-none hover:bg-[#F0E8D9] sm:gap-3">
+          <div className="relative h-8 w-8 overflow-hidden rounded-full border border-amber-600/30 ring-1 ring-amber-600/10 sm:h-9 sm:w-9">
+            <Image src={displayAvatar} alt={displayName} fill className="object-cover" />
+          </div>
+          <div className="hidden items-center gap-1 text-sm sm:flex">
+            <span className="text-neutral-500">Xin chào,</span>
+            <span className="font-semibold text-neutral-800">{displayName}</span>
+            <ChevronDown className="h-4 w-4 text-neutral-500" />
+          </div>
         </div>
       </div>
     </header>
