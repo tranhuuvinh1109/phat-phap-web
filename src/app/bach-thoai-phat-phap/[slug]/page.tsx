@@ -1,7 +1,7 @@
+import { PostDetailClient } from "@/components/post";
 import { Metadata } from "next";
 import React from "react";
 
-import { PostDetailClient } from "./post-detail-client";
 
 interface PostPageProps {
   params: Promise<{ slug: string }>;

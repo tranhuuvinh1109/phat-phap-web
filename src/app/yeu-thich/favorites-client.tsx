@@ -17,7 +17,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useMemo, useState } from "react";
 
-import { Header, Sidebar } from "@/components/layout";
+import { MainLayout } from "@/components/layout";
 import { formatTime } from "@/lib/utils";
 import {
   type FavoriteItem,
@@ -30,7 +30,6 @@ type FilterTab = "ALL" | "AUDIO" | "ARTICLE";
 
 export const FavoritesClient: React.FC = () => {
   const router = useRouter();
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<FilterTab>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -113,26 +112,13 @@ export const FavoritesClient: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-[#FAF7F0] text-neutral-800">
-      {/* Sidebar Navigation */}
-      <Sidebar
-        activeId="favorites"
-        isMobileOpen={isMobileSidebarOpen}
-        onCloseMobile={() => setIsMobileSidebarOpen(false)}
-      />
-
-      {/* Main Content Area */}
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-        {/* Sticky Header */}
-        <Header
-          onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
-          userName="Vinh"
-          onSearch={(query) => setSearchQuery(query)}
-        />
-
-        {/* Content Container */}
-        <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-5 sm:px-6 sm:py-7 space-y-6">
-          {/* Breadcrumb Navigation */}
+    <MainLayout
+      activeId="favorites"
+      maxWidth="4xl"
+      mainClassName="space-y-6"
+      onSearch={(query) => setSearchQuery(query)}
+    >
+      {/* Breadcrumb Navigation */}
           <div className="flex items-center gap-1.5 text-xs text-neutral-500">
             <Link href="/" className="hover:text-amber-700 flex items-center gap-1">
               <Home className="h-3 w-3" />
@@ -389,15 +375,12 @@ export const FavoritesClient: React.FC = () => {
               })}
             </div>
           )}
-        </main>
-
         {/* Toast Alert */}
         {toastMessage && (
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-neutral-900/90 text-white border border-neutral-700 px-4 py-2 text-xs font-semibold shadow-xl backdrop-blur-md z-50 animate-in fade-in slide-in-from-bottom-2">
             {toastMessage}
           </div>
         )}
-      </div>
-    </div>
+    </MainLayout>
   );
 };

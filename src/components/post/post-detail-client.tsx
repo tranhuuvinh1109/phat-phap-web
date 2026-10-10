@@ -25,7 +25,7 @@ import React, { useState } from "react";
 import { useGetPostBySlug } from "@/api/post";
 import type { PostItemType } from "@/api/post/post.type";
 import { isBachThoaiPhatPhapCategory } from "@/app/admin/post/utils/content-type";
-import { Header, Sidebar } from "@/components/layout";
+import { MainLayout } from "@/components/layout";
 import {
   BachThoaiAudioPlayer,
   CategorizedPosts,
@@ -36,46 +36,6 @@ import { ContentType } from "@/enums";
 import { formatTime } from "@/lib/utils";
 import { useAudioPlayerStore, useFavoritesStore, useIsFavorite } from "@/stores";
 
-// Mock fallback items matching the provided design image for fallback support
-const FALLBACK_BACH_THOAI_ITEMS = [
-  {
-    id: "bt-1",
-    title: "Sống an lạc trong hiện tại",
-    slug: "song-an-lac-trong-hien-tai",
-    authorName: "TT. Thích Minh Niệm",
-    thumbnailUrl: "/images/lotus-thumb.jpg",
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-    duration: 1696,
-  },
-  {
-    id: "bt-2",
-    title: "Ý nghĩa của lòng từ bi",
-    slug: "y-nghia-cua-long-tu-bi",
-    authorName: "TT. Thích Pháp Hòa",
-    thumbnailUrl: "/images/buddha-thumb.jpg",
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-    duration: 1472,
-  },
-  {
-    id: "bt-3",
-    title: "Phật pháp trong đời sống",
-    slug: "phat-phap-trong-doi-song",
-    authorName: "TT. Thích Chân Quang",
-    thumbnailUrl: "/images/home-hero-banner.jpg",
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
-    duration: 1905,
-  },
-  {
-    id: "bt-4",
-    title: "Nuôi dưỡng tâm thiện",
-    slug: "nuoi-duong-tam-thien",
-    authorName: "TT. Thích Minh Niệm",
-    thumbnailUrl: "/images/auth-banner.jpg",
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
-    duration: 1580,
-  },
-];
-
 export const PostDetailClient: React.FC = () => {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
@@ -83,7 +43,6 @@ export const PostDetailClient: React.FC = () => {
 
   const { data: post, isLoading, isError, error, refetch } = useGetPostBySlug(slug);
 
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
   // Global Audio Store
@@ -96,43 +55,7 @@ export const PostDetailClient: React.FC = () => {
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Fallback for default mock items from /bach-thoai-phat-phap if API returned 404
-  const fallbackItem = FALLBACK_BACH_THOAI_ITEMS.find(
-    (item) => item.slug === slug || item.id === slug
-  );
-
-  const displayPost: PostItemType | null =
-    post ||
-    (!isLoading && (!post || isError) && fallbackItem
-      ? ({
-          id: fallbackItem.id,
-          title: fallbackItem.title,
-          slug: fallbackItem.slug,
-          type: ContentType.AUDIO,
-          thumbnailUrl: fallbackItem.thumbnailUrl,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          category: {
-            id: "f19d8640-92c1-4b04-9a62-a88997969619",
-            name: "Bách Thoại Phật Pháp",
-            slug: "bach-thoai-phat-phap",
-          },
-          author: {
-            id: "author-1",
-            name: fallbackItem.authorName,
-            slug: "thich-minh-niem",
-            avatarUrl: fallbackItem.thumbnailUrl,
-          },
-          audio: {
-            id: "audio-1",
-            postId: fallbackItem.id,
-            audioUrl: fallbackItem.audioUrl,
-            duration: fallbackItem.duration,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-        } as PostItemType)
-      : null);
+  const displayPost: PostItemType | null = post || null;
 
   const isBookmarked = useIsFavorite(displayPost?.id);
 
@@ -198,27 +121,9 @@ export const PostDetailClient: React.FC = () => {
     : null;
 
   return (
-    <div className="flex min-h-screen w-full bg-[#FAF7F0] text-neutral-800">
-      {/* 1. App Left Sidebar Navigation - ALWAYS PRESERVED */}
-      <Sidebar
-        activeId="bach-thoai"
-        isMobileOpen={isMobileSidebarOpen}
-        onCloseMobile={() => setIsMobileSidebarOpen(false)}
-      />
-
-      {/* 2. Main Content Viewport */}
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-        {/* Sticky Header with Search and Profile - ALWAYS PRESERVED */}
-        <Header
-          onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
-          userName="Vinh"
-          onSearch={(query) => console.log("Searching for:", query)}
-        />
-
-        {/* Dashboard Main Grid Area */}
-        <main className="mx-auto w-full max-w-[1600px] flex-1 p-4 sm:p-6 lg:p-7">
-          <div className="flex flex-col items-start gap-6 xl:flex-row">
-            {/* Center Main Stream: BachThoaiAudioPlayer or Standard Article */}
+    <MainLayout activeId="bach-thoai">
+      <div className="flex flex-col items-start gap-6 xl:flex-row">
+        {/* Center Main Stream: BachThoaiAudioPlayer or Standard Article */}
             <div className="w-full min-w-0 flex-1 space-y-5">
               {/* Top Navigation & Breadcrumb */}
               <div className="flex items-center justify-between gap-3 text-xs text-neutral-500">
@@ -503,7 +408,6 @@ export const PostDetailClient: React.FC = () => {
               <CategorizedPosts />
             </aside>
           </div>
-        </main>
 
         {/* Toast Alert */}
         {(isCopied || toastMessage) && (
@@ -511,7 +415,6 @@ export const PostDetailClient: React.FC = () => {
             {toastMessage || "Đã sao chép liên kết bài viết!"}
           </div>
         )}
-      </div>
-    </div>
+    </MainLayout>
   );
 };

@@ -23,6 +23,7 @@ import { ContentType } from "@/enums";
 import { formatTime, stripHtml } from "@/lib/utils";
 
 import { PostContentRenderer } from "./post-content-renderer";
+import { BACH_THOAI_PHAT_PHAP_ID } from "@/constants";
 
 interface CategoryGroup {
   id: string;
@@ -36,10 +37,14 @@ interface CategorizedPostsProps {
   className?: string;
   titleOverride?: string;
   isAdmin?: boolean;
+  excludeBachThoai?: boolean;
+  hideIfEmpty?: boolean;
 }
 
 export const CategorizedPosts: React.FC<CategorizedPostsProps> = ({
   className = "",
+  excludeBachThoai = false,
+  hideIfEmpty = false,
 }) => {
   const router = useRouter();
   const { data, isLoading, isError, error, refetch } = useGetPosts();
@@ -63,12 +68,12 @@ export const CategorizedPosts: React.FC<CategorizedPostsProps> = ({
       const catName = cat?.name || "Danh mục khác";
       const catSlug = cat?.slug || "uncategorized";
 
-      const normalizedName = catName.toLowerCase().trim();
-      const normalizedSlug = catSlug.toLowerCase().trim();
       const isBachThoai =
-        normalizedName.includes("bạch thoại") ||
-        normalizedName.includes("bach thoai") ||
-        normalizedSlug.includes("bach-thoai");
+        catId === BACH_THOAI_PHAT_PHAP_ID;
+
+      if (excludeBachThoai && isBachThoai) {
+        return;
+      }
 
       if (!groupMap.has(catId)) {
         groupMap.set(catId, {
@@ -83,13 +88,13 @@ export const CategorizedPosts: React.FC<CategorizedPostsProps> = ({
       groupMap.get(catId)!.posts.push(post);
     });
 
-    // Sort to place "Bạch thoại Phật pháp" at the top
+    // Sort to place "Bạch thoại Phật pháp" at the top if present
     return Array.from(groupMap.values()).sort((a, b) => {
       if (a.isBachThoai && !b.isBachThoai) return -1;
       if (!a.isBachThoai && b.isBachThoai) return 1;
       return a.name.localeCompare(b.name, "vi");
     });
-  }, [posts]);
+  }, [posts, excludeBachThoai]);
 
   // Play / Pause Audio Handler
   const handleTogglePlay = (post: PostItemType, e?: React.MouseEvent) => {
@@ -191,6 +196,7 @@ export const CategorizedPosts: React.FC<CategorizedPostsProps> = ({
 
   // Empty State
   if (groupedCategories.length === 0) {
+    if (hideIfEmpty) return null;
     return (
       <div className={`rounded-2xl border border-dashed border-[#EDE5D8] bg-white/70 p-8 text-center ${className}`}>
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-700">

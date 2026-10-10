@@ -15,7 +15,7 @@ import React, { useMemo, useRef, useState } from "react";
 
 import { useGetPosts } from "@/api/post";
 import type { PostItemType } from "@/api/post/post.type";
-import { Header, Sidebar } from "@/components/layout";
+import { MainLayout } from "@/components/layout";
 import { ContentType } from "@/enums";
 import { formatTime } from "@/lib/utils";
 import { useAudioPlayerStore } from "@/stores";
@@ -73,7 +73,6 @@ type FilterTab = "ALL" | "PHAP_THOAI" | "BAI_GIANG" | "AUDIO" | "VAN_BAN";
 export const BachThoaiClient: React.FC = () => {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<FilterTab>("ALL");
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Global Audio Store
   const currentTrack = useAudioPlayerStore((s) => s.currentTrack);
@@ -169,26 +168,8 @@ export const BachThoaiClient: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-[#FAF7F0] text-neutral-800">
-      {/* Sidebar Navigation */}
-      <Sidebar
-        activeId="bach-thoai"
-        isMobileOpen={isMobileSidebarOpen}
-        onCloseMobile={() => setIsMobileSidebarOpen(false)}
-      />
-
-      {/* Main Content Viewport */}
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-        {/* Sticky Header */}
-        <Header
-          onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
-          userName="Vinh"
-          onSearch={(query) => console.log("Searching for:", query)}
-        />
-
-        {/* Content Area */}
-        <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-5 sm:px-6 sm:py-7 space-y-5">
-          {/* Header Title & Breadcrumb */}
+    <MainLayout activeId="bach-thoai" maxWidth="4xl" mainClassName="space-y-5">
+      {/* Header Title & Breadcrumb */}
           <div className="space-y-1">
             <h1
               className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900"
@@ -376,8 +357,6 @@ export const BachThoaiClient: React.FC = () => {
               );
             })}
           </div>
-        </main>
-      </div>
-    </div>
+    </MainLayout>
   );
 };

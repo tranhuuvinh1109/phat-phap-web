@@ -37,7 +37,7 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({ items = QUICK_PRAC
   return (
     <section className="space-y-3">
       {/* Section Title */}
-      <h3 className="text-base font-bold text-neutral-900 sm:text-lg">Tu tập nhanh</h3>
+      <h3 className="text-base font-bold text-neutral-900 sm:text-lg">Hướng dẫn tu tập</h3>
 
       {/* Grid of 5 Category Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-3.5 md:grid-cols-5">

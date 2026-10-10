@@ -8,8 +8,8 @@ import "@/styles/globals.css";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Phat Phap Web",
-  description: "Phat Phap Web application",
+  title: "Phap Mon Tam Linh",
+  description: "Phap Mon Tam Linh application",
 };
 
 type TProps = Readonly<IChildren>;
