@@ -12,5 +12,7 @@ export const API_URL = {
   users: "/users",
   upgradeRole: "/users/upgrade-role",
   userPermissions: (userId: string) => `/users/${userId}/permissions`,
+  analyticsEvents: "/analytics/posts/events",
+  analyticsTopPosts: "/analytics/posts/top",
 };
 

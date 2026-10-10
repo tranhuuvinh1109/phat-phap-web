@@ -34,6 +34,7 @@ import {
 import { Button } from "@/components/ui";
 import { ContentType } from "@/enums";
 import { formatTime } from "@/lib/utils";
+import { useEvent } from "@/hooks";
 import { useAudioPlayerStore, useFavoritesStore, useIsFavorite } from "@/stores";
 
 export const PostDetailClient: React.FC = () => {
@@ -56,6 +57,9 @@ export const PostDetailClient: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const displayPost: PostItemType | null = post || null;
+
+  // Track Post Interactions (VIEW on mount, READ after 10s)
+  useEvent(displayPost?.id);
 
   const isBookmarked = useIsFavorite(displayPost?.id);
 

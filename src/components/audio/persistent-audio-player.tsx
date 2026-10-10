@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 
 import { formatTime } from "@/lib/utils";
+import { useEvent } from "@/hooks";
 import { useAudioPlayerStore } from "@/stores";
 
 export const PersistentAudioPlayer: React.FC = () => {
@@ -29,6 +30,9 @@ export const PersistentAudioPlayer: React.FC = () => {
   const setDuration = useAudioPlayerStore((s) => s.setDuration);
   const clearSeekTarget = useAudioPlayerStore((s) => s.clearSeekTarget);
   const closeMiniPlayer = useAudioPlayerStore((s) => s.closeMiniPlayer);
+
+  // Track LISTEN interaction event immediately when audio starts playing
+  const { trackListen } = useEvent();
 
   // Sync image when track changes
   useEffect(() => {
@@ -92,6 +96,12 @@ export const PersistentAudioPlayer: React.FC = () => {
       setCurrentTime(audio.currentTime);
     };
 
+    const handlePlay = () => {
+      if (currentTrack?.id) {
+        trackListen(currentTrack.id);
+      }
+    };
+
     const handleLoadedMetadata = () => {
       if (audio.duration && !isNaN(audio.duration)) {
         setDuration(audio.duration);
@@ -108,15 +118,19 @@ export const PersistentAudioPlayer: React.FC = () => {
     };
 
     audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("playing", handlePlay);
+    audio.addEventListener("play", handlePlay);
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
     audio.addEventListener("ended", handleEnded);
 
     return () => {
       audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("playing", handlePlay);
+      audio.removeEventListener("play", handlePlay);
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
       audio.removeEventListener("ended", handleEnded);
     };
-  }, [isRepeat, pause, setCurrentTime, setDuration]);
+  }, [isRepeat, pause, setCurrentTime, setDuration, currentTrack?.id, trackListen]);
 
   // Seek bar click handler
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
