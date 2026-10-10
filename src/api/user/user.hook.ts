@@ -1,0 +1,94 @@
+import {
+  useMutation,
+  type UseMutationOptions,
+  type UseMutationResult,
+  useQuery,
+  type UseQueryOptions,
+  type UseQueryResult,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { AxiosError } from "axios";
+
+import { QueryKeyEnum } from "@/enums";
+import {
+  getUsers,
+  updateCollaboratorPermissions,
+  upgradeUserRole,
+} from "./user.api";
+import {
+  AssignPermissionsPayloadType,
+  UpgradeRolePayloadType,
+  UserItemType,
+} from "./user.type";
+
+export type UseGetUsersOptions = Omit<
+  UseQueryOptions<UserItemType[], AxiosError>,
+  "queryKey" | "queryFn"
+>;
+
+/**
+ * Query hook to fetch users list via GET /users
+ */
+export const useGetUsers = (
+  options?: UseGetUsersOptions
+): UseQueryResult<UserItemType[], AxiosError> => {
+  return useQuery({
+    queryKey: [QueryKeyEnum.GET_USERS],
+    queryFn: getUsers,
+    ...options,
+  });
+};
+
+export type UseUpgradeUserRoleOptions = Omit<
+  UseMutationOptions<UserItemType, AxiosError, UpgradeRolePayloadType>,
+  "mutationFn"
+>;
+
+/**
+ * Mutation hook to upgrade/change role and permissions via PUT /users/upgrade-role
+ */
+export const useUpgradeUserRole = (
+  options?: UseUpgradeUserRoleOptions
+): UseMutationResult<UserItemType, AxiosError, UpgradeRolePayloadType> => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: upgradeUserRole,
+    ...options,
+    onSuccess: (...args) => {
+      queryClient.invalidateQueries({
+        queryKey: [QueryKeyEnum.GET_USERS],
+      });
+      options?.onSuccess?.(...args);
+    },
+  });
+};
+
+export type UseUpdateCollaboratorPermissionsOptions = Omit<
+  UseMutationOptions<UserItemType, AxiosError, AssignPermissionsPayloadType>,
+  "mutationFn"
+>;
+
+/**
+ * Mutation hook to update collaborator permissions via PUT /users/:userId/permissions
+ */
+export const useUpdateCollaboratorPermissions = (
+  options?: UseUpdateCollaboratorPermissionsOptions
+): UseMutationResult<
+  UserItemType,
+  AxiosError,
+  AssignPermissionsPayloadType
+> => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateCollaboratorPermissions,
+    ...options,
+    onSuccess: (...args) => {
+      queryClient.invalidateQueries({
+        queryKey: [QueryKeyEnum.GET_USERS],
+      });
+      options?.onSuccess?.(...args);
+    },
+  });
+};

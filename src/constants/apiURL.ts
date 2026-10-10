@@ -8,5 +8,9 @@ export const API_URL = {
   posts: "/posts",
   postsCategory: "/posts/category",
   postBySlug: (slug: string) => `/posts/slug/${slug}`,
+  permissions: "/permissions",
+  users: "/users",
+  upgradeRole: "/users/upgrade-role",
+  userPermissions: (userId: string) => `/users/${userId}/permissions`,
 };
 

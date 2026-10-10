@@ -11,6 +11,7 @@ import {
   FileText,
   Headphones,
   Plus,
+  ShieldCheck,
   Sparkles,
   TrendingUp,
   Users,
@@ -214,7 +215,14 @@ export const DashboardOverview: React.FC = () => {
         </div>
 
         {/* Quick Action Button */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+          <Link
+            href="/admin/users"
+            className="inline-flex items-center gap-2 rounded-xl border border-[#EDE5D8] bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-neutral-800 shadow-2xs hover:bg-[#FAF7F0] hover:text-amber-900 transition-colors cursor-pointer"
+          >
+            <ShieldCheck className="h-4 w-4 text-amber-700" />
+            <span>Phân quyền thành viên</span>
+          </Link>
           <Link
             href="/admin/post/create-post"
             className="inline-flex items-center gap-2 rounded-xl bg-amber-800 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-amber-900 transition-colors cursor-pointer"
