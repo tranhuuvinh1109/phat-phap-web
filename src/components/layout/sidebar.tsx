@@ -90,7 +90,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className="text-lg font-bold tracking-wide text-amber-950"
               style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
             >
-              Phật Pháp
+              Phật Môn Tâm Linh
             </span>
           </div>
 
