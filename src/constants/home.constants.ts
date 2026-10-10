@@ -11,7 +11,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   { id: "practice", label: "Tu tập", iconName: "Flame", href: "#tu-tap" },
   { id: "bach-thoai", label: "Bạch thoại Phật pháp", iconName: "BookOpen", href: "/bach-thoai-phat-phap" },
   { id: "favorites", label: "Bài viết đã lưu", iconName: "Bookmark", href: "/yeu-thich" },
-  { id: "khai-thi", label: "Khai thị", iconName: "Sparkles", href: "#khai-thi" },
+  { id: "khai-thi", label: "Khai thị", iconName: "Sparkles", href: "/khai-thi" },
   { id: "hop-phap", label: "Bạch thoại hợp pháp", iconName: "Compass", href: "#hop-phap" },
   { id: "search", label: "Tìm kiếm", iconName: "Search", href: "#tim-kiem" },
 ];

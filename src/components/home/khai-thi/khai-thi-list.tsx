@@ -55,7 +55,7 @@ export const KhaiThiList: React.FC<KhaiThiListProps> = ({
 
         {/* View All Action */}
         <Link
-          href="/bach-thoai-phat-phap"
+          href="/khai-thi"
           className="group flex items-center gap-1 text-xs sm:text-sm font-semibold text-amber-800 transition hover:text-amber-900"
         >
           <span>Xem tất cả</span>

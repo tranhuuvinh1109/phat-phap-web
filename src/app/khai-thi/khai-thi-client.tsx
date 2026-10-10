@@ -2,6 +2,7 @@
 
 import {
   ArrowLeft,
+  ArrowRight,
   BookOpen,
   ChevronLeft,
   ChevronRight,
@@ -11,35 +12,30 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import React, { useMemo, useState } from "react";
 
 import { useGetPostsByCategory } from "@/api/post";
 import type { PostItemType } from "@/api/post/post.type";
-import { BachThoaiDisplayItem, BachThoaiItem } from "@/components/home";
+import { KhaiThiItem } from "@/components/home";
 import { MainLayout } from "@/components/layout";
-import { BachThoaiSkeleton } from "@/components/skeletons";
-import { BACH_THOAI_PHAT_PHAP_SLUG } from "@/constants";
-import { ContentType } from "@/enums";
-import { formatTime, stripHtml } from "@/lib/utils";
+import { KhaiThiSkeleton } from "@/components/skeletons";
+import { KHAI_THI_SLUG } from "@/constants";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 9;
 
-type FilterTab = "ALL" | "PHAP_THOAI" | "BAI_GIANG" | "AUDIO" | "VAN_BAN";
-
-export const BachThoaiClient: React.FC = () => {
+export const KhaiThiClient: React.FC = () => {
   const [page, setPage] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [activeFilter, setActiveFilter] = useState<FilterTab>("ALL");
   const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
 
+  // Current cursor corresponding to the active page
   const currentCursor = cursorHistory[page - 1] || null;
 
-  // Query posts by category_name = BACH_THOAI_PHAT_PHAP_SLUG with pagination
+  // Query posts by category ID with pagination
   const { data, isLoading, isError, error, refetch, isFetching } =
     useGetPostsByCategory({
-      category_name: BACH_THOAI_PHAT_PHAP_SLUG,
+      category_name: KHAI_THI_SLUG,
       limit: PAGE_SIZE,
       ...(currentCursor ? { cursor: currentCursor } : {}),
       page,
@@ -48,62 +44,16 @@ export const BachThoaiClient: React.FC = () => {
   const rawPosts: PostItemType[] = data?.data || [];
   const meta = data?.meta;
 
-  // Transform API posts to display item format
-  const displayItems = useMemo<BachThoaiDisplayItem[]>(() => {
-    return rawPosts.map((post) => {
-      let durationText = "--:--";
-      if (post.audio?.duration && post.audio.duration > 0) {
-        durationText = formatTime(post.audio.duration);
-      } else if (post.video?.duration && post.video.duration > 0) {
-        durationText = formatTime(post.video.duration);
-      }
-
-      const snippet = post.content
-        ? stripHtml(post.content).slice(0, 80)
-        : undefined;
-
-      return {
-        id: post.id,
-        title: post.title,
-        slug: post.slug || post.id,
-        authorName: post.author?.name || "Bạch thoại Phật pháp",
-        durationText,
-        thumbnailUrl: post.thumbnailUrl || "/images/lotus-thumb.jpg",
-        type:
-          post.type ||
-          (post.audio?.audioUrl ? ContentType.AUDIO : ContentType.NORMAL),
-        audioUrl: post.audio?.audioUrl,
-        snippet,
-      };
+  // Client-side quick filter if user types in search box
+  const filteredPosts = useMemo(() => {
+    if (!searchQuery.trim()) return rawPosts;
+    const query = searchQuery.toLowerCase().trim();
+    return rawPosts.filter((post) => {
+      const titleMatch = post.title?.toLowerCase().includes(query);
+      const authorMatch = post.author?.name?.toLowerCase().includes(query);
+      return titleMatch || authorMatch;
     });
-  }, [rawPosts]);
-
-  // Filter items by search keyword and tab
-  const filteredItems = useMemo(() => {
-    return displayItems.filter((item) => {
-      // 1. Search keyword
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim();
-        const matchTitle = item.title.toLowerCase().includes(query);
-        const matchAuthor = item.authorName.toLowerCase().includes(query);
-        if (!matchTitle && !matchAuthor) return false;
-      }
-
-      // 2. Tab filter
-      if (activeFilter === "ALL") return true;
-      if (activeFilter === "AUDIO")
-        return item.type === ContentType.AUDIO || !!item.audioUrl;
-      if (activeFilter === "VAN_BAN")
-        return item.type === ContentType.NORMAL;
-      if (activeFilter === "PHAP_THOAI") {
-        return item.title.toLowerCase().includes("pháp thoại");
-      }
-      if (activeFilter === "BAI_GIANG") {
-        return item.title.toLowerCase().includes("bài giảng");
-      }
-      return true;
-    });
-  }, [displayItems, activeFilter, searchQuery]);
+  }, [rawPosts, searchQuery]);
 
   // Pagination calculations
   const totalPosts = meta?.total ?? rawPosts.length;
@@ -147,7 +97,7 @@ export const BachThoaiClient: React.FC = () => {
   };
 
   return (
-    <MainLayout activeId="bach-thoai" className="space-y-6">
+    <MainLayout activeId="khai-thi">
       <div className="space-y-6 sm:space-y-8 pb-12">
         {/* 1. Breadcrumbs */}
         <nav
@@ -162,137 +112,68 @@ export const BachThoaiClient: React.FC = () => {
             <span>Trang chủ</span>
           </Link>
           <ChevronRight className="h-3 w-3 text-neutral-400" />
-          <span className="text-amber-900 font-semibold">
-            Bạch thoại Phật pháp
-          </span>
+          <span className="text-amber-900 font-semibold">Khai thị</span>
         </nav>
 
-        {/* 2. Hero Banner Card */}
-        <div className="relative overflow-hidden rounded-3xl border border-amber-900/10 shadow-sm">
-          <div className="relative h-48 sm:h-60 w-full">
-            <Image
-              src="/images/home-hero-banner.jpg"
-              alt="Bạch thoại Phật pháp"
-              fill
-              priority
-              className="object-cover object-center"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/45 to-black/25" />
-          </div>
+        {/* 2. Hero Header Banner */}
+        <div className="relative overflow-hidden rounded-3xl border border-[#EDE3D2] bg-gradient-to-br from-[#FFFDF9] via-[#FAF5EB] to-[#F5ECE0] p-6 sm:p-8 shadow-xs">
+          {/* Subtle background glow effect */}
+          <div className="pointer-events-none absolute -right-12 -top-12 h-64 w-64 rounded-full bg-amber-200/40 blur-3xl" />
+          <div className="pointer-events-none absolute -left-12 -bottom-12 h-64 w-64 rounded-full bg-amber-100/50 blur-3xl" />
 
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white">
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/40 bg-black/35 px-3 py-1 text-xs font-semibold text-amber-200 backdrop-blur-md mb-2">
-              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-              <span>Pháp âm mầu nhiệm</span>
-            </div>
-            <h1
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-wide drop-shadow-md"
-              style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-            >
-              Bạch Thoại Phật Pháp
-            </h1>
-            <p className="mt-2 max-w-xl text-xs sm:text-sm font-medium text-amber-100/90 drop-shadow-sm">
-              Dành cho những người mới bắt đầu tu tập và tìm hiểu chánh pháp,
-              chuyển hóa tâm thức và soi sáng con đường an lạc.
-            </p>
-          </div>
-        </div>
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div className="space-y-2.5 max-w-2xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/80 bg-amber-100/80 px-3 py-1 text-xs font-semibold text-amber-900 shadow-2xs backdrop-blur-xs">
+                <Sparkles className="h-3.5 w-3.5 text-amber-700" />
+                <span>Lời vàng Phật pháp</span>
+              </div>
 
-        {/* 3. Search Bar & Filter Tabs */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          {/* Filter Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs sm:text-sm">
-            <button
-              type="button"
-              onClick={() => setActiveFilter("ALL")}
-              className={`rounded-xl px-3.5 py-2 font-semibold transition shrink-0 cursor-pointer ${
-                activeFilter === "ALL"
-                  ? "bg-[#B86E0E] text-white shadow-xs"
-                  : "bg-white/80 hover:bg-white text-neutral-600 border border-[#EDE5D8]"
-              }`}
-            >
-              Tất cả
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveFilter("PHAP_THOAI")}
-              className={`rounded-xl px-3.5 py-2 font-semibold transition shrink-0 cursor-pointer ${
-                activeFilter === "PHAP_THOAI"
-                  ? "bg-[#B86E0E] text-white shadow-xs"
-                  : "bg-white/80 hover:bg-white text-neutral-600 border border-[#EDE5D8]"
-              }`}
-            >
-              Pháp thoại
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveFilter("BAI_GIANG")}
-              className={`rounded-xl px-3.5 py-2 font-semibold transition shrink-0 cursor-pointer ${
-                activeFilter === "BAI_GIANG"
-                  ? "bg-[#B86E0E] text-white shadow-xs"
-                  : "bg-white/80 hover:bg-white text-neutral-600 border border-[#EDE5D8]"
-              }`}
-            >
-              Bài giảng
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveFilter("AUDIO")}
-              className={`rounded-xl px-3.5 py-2 font-semibold transition shrink-0 cursor-pointer ${
-                activeFilter === "AUDIO"
-                  ? "bg-[#B86E0E] text-white shadow-xs"
-                  : "bg-white/80 hover:bg-white text-neutral-600 border border-[#EDE5D8]"
-              }`}
-            >
-              Audio
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveFilter("VAN_BAN")}
-              className={`rounded-xl px-3.5 py-2 font-semibold transition shrink-0 cursor-pointer ${
-                activeFilter === "VAN_BAN"
-                  ? "bg-[#B86E0E] text-white shadow-xs"
-                  : "bg-white/80 hover:bg-white text-neutral-600 border border-[#EDE5D8]"
-              }`}
-            >
-              Văn bản
-            </button>
-          </div>
-
-          {/* Quick Search */}
-          <div className="relative w-full sm:w-72 shrink-0">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm kiếm bài giảng..."
-              className="w-full rounded-2xl border border-amber-200/80 bg-white/90 py-2 pl-10 pr-9 text-xs sm:text-sm text-neutral-800 placeholder-neutral-400 shadow-2xs outline-none transition focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-200/60"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 cursor-pointer"
-                aria-label="Xóa tìm kiếm"
+              <h1
+                className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-neutral-900"
+                style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
               >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
+                Khai Thị Phật Pháp
+              </h1>
+
+              <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed">
+                Tổng hợp những lời khai thị từ bi và sâu sắc, giúp mở mang trí tuệ,
+                chuyển hóa tâm thức và vững bước trên con đường tu học an lạc.
+              </p>
+            </div>
+
+            {/* Quick Search Bar */}
+            <div className="w-full md:w-80 shrink-0">
+              <div className="relative">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Tìm kiếm bài khai thị..."
+                  className="w-full rounded-2xl border border-amber-200/80 bg-white/90 py-2.5 pl-10 pr-9 text-xs sm:text-sm text-neutral-800 placeholder-neutral-400 shadow-2xs outline-none transition focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-200/60"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
+                    aria-label="Xóa tìm kiếm"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* 4. List Status Info */}
+        {/* 3. List Header Info */}
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm">
           <div className="flex items-center gap-2 font-medium text-neutral-600">
             <span className="flex h-2 w-2 rounded-full bg-amber-500" />
             <span>
               {isLoading
                 ? "Đang tải danh sách..."
-                : `Hiển thị ${filteredItems.length} bài viết`}
+                : `Hiển thị ${filteredPosts.length} bài viết`}
             </span>
             {meta?.total ? (
               <span className="text-neutral-400">
@@ -314,9 +195,9 @@ export const BachThoaiClient: React.FC = () => {
           </div>
         </div>
 
-        {/* 5. Content Grid */}
+        {/* 4. Posts Grid Content */}
         {isLoading ? (
-          <BachThoaiSkeleton count={PAGE_SIZE} />
+          <KhaiThiSkeleton count={PAGE_SIZE} />
         ) : isError ? (
           /* Error State */
           <div className="flex flex-col items-center justify-center rounded-3xl border border-rose-200/80 bg-rose-50/50 p-8 sm:p-12 text-center shadow-2xs">
@@ -338,7 +219,7 @@ export const BachThoaiClient: React.FC = () => {
               <span>Thử lại</span>
             </button>
           </div>
-        ) : filteredItems.length === 0 ? (
+        ) : filteredPosts.length === 0 ? (
           /* Empty State */
           <div className="flex flex-col items-center justify-center rounded-3xl border border-[#EDE5D8] bg-white/70 p-12 text-center shadow-2xs">
             <div className="mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-800 border border-amber-200/60">
@@ -347,12 +228,12 @@ export const BachThoaiClient: React.FC = () => {
             <h3 className="text-base sm:text-lg font-bold text-neutral-900">
               {searchQuery
                 ? "Không tìm thấy bài viết phù hợp"
-                : "Chưa có bài viết Bạch thoại Phật pháp nào"}
+                : "Chưa có bài viết khai thị nào"}
             </h3>
             <p className="mt-1.5 text-xs sm:text-sm text-neutral-500 max-w-sm">
               {searchQuery
                 ? `Không có kết quả nào cho "${searchQuery}". Hãy thử tìm kiếm với từ khóa khác.`
-                : "Các bài giảng sẽ sớm được cập nhật. Kính mong quý Phật tử hoan hỷ đón đọc."}
+                : "Các bài khai thị sẽ sớm được cập nhật. Kính mong quý Phật tử hoan hỷ đón đọc."}
             </p>
             {searchQuery ? (
               <button
@@ -372,17 +253,18 @@ export const BachThoaiClient: React.FC = () => {
             )}
           </div>
         ) : (
-          /* Responsive 2-Column Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
-            {filteredItems.map((item) => (
-              <BachThoaiItem key={item.id} item={item} />
+          /* Post Grid */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredPosts.map((post) => (
+              <KhaiThiItem key={post.id || post.slug} post={post} />
             ))}
           </div>
         )}
 
-        {/* 6. Pagination Controls */}
+        {/* 5. Pagination Controls */}
         {!isLoading && !isError && rawPosts.length > 0 && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-[#EDE5D8]">
+            {/* Total summary */}
             <div className="text-xs text-neutral-500 order-2 sm:order-1">
               {meta?.total ? (
                 <span>
@@ -396,6 +278,7 @@ export const BachThoaiClient: React.FC = () => {
               )}
             </div>
 
+            {/* Pagination Actions */}
             <div className="flex items-center gap-2 order-1 sm:order-2">
               {/* Prev Button */}
               <button
@@ -412,7 +295,7 @@ export const BachThoaiClient: React.FC = () => {
                 <span>Trang trước</span>
               </button>
 
-              {/* Page Numbers */}
+              {/* Page Number Indicators */}
               {totalPages > 1 && (
                 <div className="hidden sm:flex items-center gap-1">
                   {Array.from({ length: Math.min(totalPages, 5) }).map(
@@ -424,10 +307,10 @@ export const BachThoaiClient: React.FC = () => {
                           key={pageNum}
                           onClick={() => handleGoToPage(pageNum)}
                           disabled={isFetching}
-                          className={`h-8 w-8 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                          className={`h-8 w-8 rounded-xl text-xs font-semibold transition ${
                             isActive
                               ? "bg-amber-800 text-white shadow-xs"
-                              : "bg-white text-neutral-700 border border-neutral-200/80 hover:bg-amber-50 hover:text-amber-900"
+                              : "bg-white text-neutral-700 border border-neutral-200/80 hover:bg-amber-50 hover:text-amber-900 cursor-pointer"
                           }`}
                         >
                           {pageNum}

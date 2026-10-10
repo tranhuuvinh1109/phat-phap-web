@@ -6,6 +6,7 @@ export const API_URL = {
   categories: "/categories",
   presignedUploadUrl: "/files/presigned-upload-url",
   posts: "/posts",
+  postsCategory: "/posts/category",
   postBySlug: (slug: string) => `/posts/slug/${slug}`,
 };
 

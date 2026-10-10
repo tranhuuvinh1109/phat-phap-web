@@ -102,11 +102,24 @@ export interface GetPostsMetaType {
   limit: number;
   nextCursor?: string | null;
   hasNextPage?: boolean;
+  page?: number;
+  totalPages?: number;
 }
 
 export interface GetPostsResponse {
   data: PostItemType[];
   meta?: GetPostsMetaType;
 }
+
+export interface GetPostsByCategoryParams {
+  category_id?: string;
+  category_name?: string;
+  limit?: number;
+  cursor?: string | null;
+  page?: number;
+  [key: string]: any;
+}
+
+export type GetPostsByCategoryResponse = GetPostsResponse;
 
 export type CreatePostResponseType = PostItemType;

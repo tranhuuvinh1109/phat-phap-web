@@ -10,8 +10,13 @@ import {
 import { AxiosError } from "axios";
 
 import { QueryKeyEnum } from "@/enums";
-import { createPost, getPostBySlug, getPosts } from "./post.api";
-import { CreatePostPayloadType, GetPostsResponse, PostItemType } from "./post.type";
+import { createPost, getPostBySlug, getPosts, getPostsByCategory } from "./post.api";
+import {
+  CreatePostPayloadType,
+  GetPostsByCategoryParams,
+  GetPostsResponse,
+  PostItemType,
+} from "./post.type";
 
 export type UseCreatePostOptions = Omit<
   UseMutationOptions<PostItemType, AxiosError, CreatePostPayloadType>,
@@ -74,6 +79,25 @@ export const useGetPostBySlug = (
     queryKey: [QueryKeyEnum.GET_POST_DETAIL, slug],
     queryFn: () => getPostBySlug(slug),
     enabled: !!slug,
+    ...options,
+  });
+};
+
+export type UseGetPostsByCategoryOptions = Omit<
+  UseQueryOptions<GetPostsResponse, AxiosError>,
+  "queryKey" | "queryFn"
+>;
+
+/**
+ * Query hook to fetch posts by category via GET /posts/category
+ */
+export const useGetPostsByCategory = (
+  params?: GetPostsByCategoryParams,
+  options?: UseGetPostsByCategoryOptions
+): UseQueryResult<GetPostsResponse, AxiosError> => {
+  return useQuery({
+    queryKey: [QueryKeyEnum.GET_POSTS_BY_CATEGORY, params],
+    queryFn: () => getPostsByCategory(params),
     ...options,
   });
 };
