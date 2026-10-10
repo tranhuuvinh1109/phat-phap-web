@@ -37,6 +37,7 @@
     "next": "^16.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-hot-toast": "^2.6.1",
     "react-quill": "npm:react-quill-new",
     "react-quill-new": "^3.8.3",
     "tailwind-merge": "^3.2.0",

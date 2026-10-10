@@ -20,7 +20,7 @@ export interface MainLayoutProps {
 export const MainLayout: React.FC<MainLayoutProps> = ({
   children,
   activeId,
-  userName = "Vinh",
+  userName,
   onSearch,
   maxWidth = "default",
   className = "",
@@ -63,10 +63,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
       {/* Main Content Viewport */}
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-        {/* Sticky Header with Search and Profile */}
+        {/* Sticky Header with Search and Favorites */}
         <Header
           onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
-          userName={userName}
           onSearch={onSearch || ((query) => console.log("Searching for:", query))}
         />
 

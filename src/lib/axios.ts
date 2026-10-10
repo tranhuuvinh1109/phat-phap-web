@@ -6,46 +6,40 @@ import axios, {
 
 import { API_URL } from "@/constants";
 
-const ACCESS_TOKEN_KEY = "access_token";
-const REFRESH_TOKEN_KEY = "refresh_token";
+import { getAppStorage, setAppStorage } from "@/lib/storage";
 
 /**
- * Token management helpers (stores both access_token and accessToken for universal compatibility)
+ * Token management helpers using unified 'phap-mon-tam-linh' storage
  */
 export const getAuthToken = (): string | null => {
   if (typeof window === "undefined") return null;
-  return (
-    localStorage.getItem(ACCESS_TOKEN_KEY) ||
-    localStorage.getItem("accessToken")
-  );
+  const store = getAppStorage();
+  return store["access-token"] || null;
 };
 
 export const setAuthToken = (token: string): void => {
   if (typeof window === "undefined") return;
-  localStorage.setItem(ACCESS_TOKEN_KEY, token);
-  localStorage.setItem("accessToken", token);
+  setAppStorage({ "access-token": token });
 };
 
 export const getRefreshToken = (): string | null => {
   if (typeof window === "undefined") return null;
-  return (
-    localStorage.getItem(REFRESH_TOKEN_KEY) ||
-    localStorage.getItem("refreshToken")
-  );
+  const store = getAppStorage();
+  return store["refresh-token"] || null;
 };
 
 export const setRefreshToken = (token: string): void => {
   if (typeof window === "undefined") return;
-  localStorage.setItem(REFRESH_TOKEN_KEY, token);
-  localStorage.setItem("refreshToken", token);
+  setAppStorage({ "refresh-token": token });
 };
 
 export const clearTokens = (): void => {
   if (typeof window === "undefined") return;
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
-  localStorage.removeItem("refreshToken");
+  setAppStorage({
+    "access-token": null,
+    "refresh-token": null,
+    user: null,
+  });
 };
 
 // Backwards compatibility alias

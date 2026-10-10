@@ -13,10 +13,14 @@ import { LotusLogo } from "@/components/shared/lotus-logo";
 import { QUICK_PRACTICE_ITEMS, QuickPracticeItem } from "@/constants/home.constants";
 
 interface QuickPracticeProps {
+  className?: string;
   items?: QuickPracticeItem[];
 }
 
-export const QuickPractice: React.FC<QuickPracticeProps> = ({ items = QUICK_PRACTICE_ITEMS }) => {
+export const QuickPractice: React.FC<QuickPracticeProps> = ({
+  className = "",
+  items = QUICK_PRACTICE_ITEMS,
+}) => {
   const renderIcon = (type: QuickPracticeItem["iconType"]) => {
     switch (type) {
       case "book":
@@ -35,9 +39,26 @@ export const QuickPractice: React.FC<QuickPracticeProps> = ({ items = QUICK_PRAC
   };
 
   return (
-    <section className="space-y-3">
-      {/* Section Title */}
-      <h3 className="text-base font-bold text-neutral-900 sm:text-lg">Hướng dẫn tu tập</h3>
+    <section className={`space-y-3.5 sm:space-y-4 ${className}`}>
+      {/* Section Header */}
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl sm:rounded-2xl bg-amber-100/90 text-amber-800 shadow-2xs border border-amber-200/60">
+          <Flame className="h-4.5 w-4.5 sm:h-5 sm:w-5 text-amber-700" />
+        </div>
+        <div>
+          <div className="flex items-center gap-2">
+            <h3 className="text-base sm:text-lg font-bold text-neutral-900">
+              Hướng dẫn tu tập
+            </h3>
+            <span className="rounded-full bg-amber-50 border border-amber-200/60 px-2 py-0.5 text-[10px] sm:text-[11px] font-semibold text-amber-800">
+              Tu tập mỗi ngày
+            </span>
+          </div>
+          <p className="hidden text-xs text-neutral-500 sm:block">
+            Nghi thức căn bản và phương pháp trợ duyên trên bước đường tu học
+          </p>
+        </div>
+      </div>
 
       {/* Grid of 5 Category Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-3.5 md:grid-cols-5">

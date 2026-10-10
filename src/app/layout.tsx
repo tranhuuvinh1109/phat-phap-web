@@ -1,7 +1,7 @@
 import { type FC } from "react";
 
 import { PersistentAudioPlayer } from "@/components/audio";
-import { AuthProvider, QueryProvider } from "@/components/providers";
+import { AuthProvider, QueryProvider, ToastProvider } from "@/components/providers";
 import { geistMono, geistSans } from "@/config";
 
 import "@/styles/globals.css";
@@ -21,6 +21,7 @@ const RootLayout: FC<TProps> = ({ children }) => (
     >
       <QueryProvider>
         <AuthProvider>
+          <ToastProvider />
           {children}
           <PersistentAudioPlayer />
         </AuthProvider>

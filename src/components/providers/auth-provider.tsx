@@ -2,6 +2,8 @@
 
 import { type ReactNode, useEffect } from "react";
 
+import toast from "react-hot-toast";
+
 import { getMe } from "@/api/auth/auth.api";
 import { getAuthToken } from "@/lib/axios";
 import { useAuthStore } from "@/stores/auth-store";
@@ -34,6 +36,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           const status = (error as { response?: { status?: number } })?.response?.status;
           if (status === 401) {
             logout();
+            toast.error("Vui lòng đăng nhập lại", { id: "auth-expired" });
           }
         });
     }
@@ -41,6 +44,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // 3. Listen for global unauthorized event dispatched by axios interceptor
     const handleUnauthorized = () => {
       logout();
+      toast.error("Vui lòng đăng nhập", { id: "auth-unauthorized" });
     };
 
     window.addEventListener("auth:unauthorized", handleUnauthorized);

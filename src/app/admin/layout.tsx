@@ -12,10 +12,14 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import React, { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+
+import toast from "react-hot-toast";
 
 import { LotusLogo } from "@/components/shared/lotus-logo";
+import { getAuthToken } from "@/lib/axios";
+import { useAuthStore } from "@/stores/auth-store";
 import { AdminUserProfile } from "./components/admin-user-profile";
 
 interface AdminLayoutProps {
@@ -38,8 +42,45 @@ const ADMIN_NAV_ITEMS: AdminNavItem[] = [
 ];
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
+  const router = useRouter();
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Auth Guard: Redirect unauthenticated users to login with pre-url
+  useEffect(() => {
+    if (!isMounted) return;
+
+    const token = getAuthToken();
+    if (!token || (isHydrated && !isAuthenticated)) {
+      toast.error("Vui lòng đăng nhập để truy cập trang quản trị", {
+        id: "auth-guard-admin",
+      });
+      const targetPreUrl = pathname || "/admin";
+      router.replace(`/login?pre-url=${encodeURIComponent(targetPreUrl)}`);
+    }
+  }, [isMounted, isAuthenticated, isHydrated, pathname, router]);
+
+  // Prevent flash of admin portal before auth verification
+  if (!isMounted || (!isAuthenticated && !getAuthToken())) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center bg-[#FAF7F0]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-9 w-9 animate-spin rounded-full border-3 border-amber-800 border-t-transparent" />
+          <p className="text-sm font-medium text-amber-900">
+            Đang kiểm tra quyền truy cập...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const renderNavLinks = () => (
     <nav className="space-y-1">

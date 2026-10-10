@@ -1,5 +1,7 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { StateStorage, createJSONStorage, persist } from "zustand/middleware";
+
+import { getAppStorage, setAppStorage } from "@/lib/storage";
 
 export interface FavoriteItem {
   id: string;
@@ -28,6 +30,31 @@ export interface FavoritesActions {
 }
 
 export type FavoritesStore = FavoritesState & FavoritesActions;
+
+const favoritesStorage: StateStorage = {
+  getItem: (): string | null => {
+    const data = getAppStorage();
+    return JSON.stringify({
+      state: {
+        favorites: Array.isArray(data.favorites) ? data.favorites : [],
+      },
+      version: 0,
+    });
+  },
+  setItem: (_name: string, value: string): void => {
+    try {
+      const parsed = JSON.parse(value);
+      setAppStorage({
+        favorites: parsed?.state?.favorites || [],
+      });
+    } catch {
+      // ignore
+    }
+  },
+  removeItem: (): void => {
+    setAppStorage({ favorites: [] });
+  },
+};
 
 export const useFavoritesStore = create<FavoritesStore>()(
   persist(
@@ -82,7 +109,8 @@ export const useFavoritesStore = create<FavoritesStore>()(
       clearFavorites: () => set({ favorites: [] }),
     }),
     {
-      name: "phat-phap-favorites-storage",
+      name: "favorites",
+      storage: createJSONStorage(() => favoritesStorage),
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);
       },

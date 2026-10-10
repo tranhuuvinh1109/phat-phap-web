@@ -2,7 +2,7 @@
 
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
 import { useSignIn } from "@/api/auth/auth.hook";
@@ -12,6 +12,8 @@ import { useAuthStore } from "@/stores/auth-store";
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preUrl = searchParams.get("pre-url") || searchParams.get("preUrl") || "/";
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const [emailOrPhone, setEmailOrPhone] = useState("");
@@ -31,7 +33,8 @@ export function LoginForm() {
         refreshToken: data.refreshToken,
       });
 
-      router.push("/");
+      const redirectTarget = preUrl.startsWith("/") ? preUrl : `/${preUrl}`;
+      router.push(redirectTarget);
     },
     onError: (error) => {
       setApiError(error.message || "Đăng nhập không thành công. Vui lòng thử lại.");

@@ -1,8 +1,9 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { StateStorage, createJSONStorage, persist } from "zustand/middleware";
 
 import { UserProfileResponseType } from "@/api/auth/auth.type";
-import { clearTokens, getAuthToken, setAuthToken, setRefreshToken } from "@/lib/axios";
+import { clearTokens, setAuthToken, setRefreshToken } from "@/lib/axios";
+import { getAppStorage, setAppStorage } from "@/lib/storage";
 
 export interface AuthState {
   user: UserProfileResponseType | null;
@@ -23,6 +24,43 @@ export interface AuthActions {
 }
 
 export type AuthStore = AuthState & AuthActions;
+
+const authStorage: StateStorage = {
+  getItem: (): string | null => {
+    const data = getAppStorage();
+    const accessToken = data["access-token"] || null;
+    const refreshToken = data["refresh-token"] || null;
+    const user = data.user || null;
+    return JSON.stringify({
+      state: {
+        user,
+        accessToken,
+        refreshToken,
+        isAuthenticated: Boolean(accessToken),
+      },
+      version: 0,
+    });
+  },
+  setItem: (_name: string, value: string): void => {
+    try {
+      const parsed = JSON.parse(value);
+      setAppStorage({
+        "access-token": parsed?.state?.accessToken ?? null,
+        "refresh-token": parsed?.state?.refreshToken ?? null,
+        user: parsed?.state?.user ?? null,
+      });
+    } catch {
+      // ignore
+    }
+  },
+  removeItem: (): void => {
+    setAppStorage({
+      "access-token": null,
+      "refresh-token": null,
+      user: null,
+    });
+  },
+};
 
 export const useAuthStore = create<AuthStore>()(
   persist(
@@ -65,7 +103,8 @@ export const useAuthStore = create<AuthStore>()(
       setHydrated: (isHydrated) => set({ isHydrated }),
     }),
     {
-      name: "auth-storage",
+      name: "auth",
+      storage: createJSONStorage(() => authStorage),
       skipHydration: true, // Prevents SSR hydration mismatch in Next.js App Router
       partialize: (state) => ({
         user: state.user,

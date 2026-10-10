@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { Suspense } from "react";
 
 import { LotusLogo } from "@/components/shared/lotus-logo";
 import { LoginForm } from "./components/login-form";
@@ -51,7 +52,9 @@ export default function LoginPage() {
 
       {/* Right Login Form Container */}
       <section className="flex min-h-screen flex-1 items-center justify-center bg-[#FDFBF7] py-10">
-        <LoginForm />
+        <Suspense fallback={<div className="h-96 w-full max-w-[420px] animate-pulse" />}>
+          <LoginForm />
+        </Suspense>
       </section>
     </main>
   );
